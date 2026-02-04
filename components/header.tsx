@@ -1,18 +1,19 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import Link from "next/link"
-import Image from "next/image"
-import { Search, ShoppingBag, Menu, Heart, MapPin, LogOut } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { ThemeToggle } from "@/components/theme-toggle"
-import HierarchicalDropdown from "@/components/hierarchical-dropdown"
-import BeautyHierarchicalDropdown from "@/components/beauty-hierarchical-dropdown"
-import MobileCategoryMenu from "@/components/mobile-category-menu"
-import { Badge } from "@/components/ui/badge"
-import { useAuth } from "@/context/auth-context"
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { Search, ShoppingBag, Menu, Heart, MapPin, LogOut } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { ThemeToggle } from "@/components/theme-toggle";
+import HierarchicalDropdown from "@/components/hierarchical-dropdown";
+import BeautyHierarchicalDropdown from "@/components/beauty-hierarchical-dropdown";
+import MobileCategoryMenu from "@/components/mobile-category-menu";
+import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/context/auth-context";
+import { useCart } from "@/context/cart-context";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,7 +21,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 
 // Category data with detailed subcategories
 const categories = [
@@ -51,8 +52,14 @@ const categories = [
         subItems: [
           { name: "Shirts", href: "/shop/men/oversized-fit/shirts" },
           { name: "Pants", href: "/shop/men/oversized-fit/pants" },
-          { name: "Polo T-Shirts", href: "/shop/men/oversized-fit/polo-t-shirts" },
-          { name: "Round Neck T-Shirts", href: "/shop/men/oversized-fit/round-neck-t-shirts" },
+          {
+            name: "Polo T-Shirts",
+            href: "/shop/men/oversized-fit/polo-t-shirts",
+          },
+          {
+            name: "Round Neck T-Shirts",
+            href: "/shop/men/oversized-fit/round-neck-t-shirts",
+          },
           { name: "Hoodies", href: "/shop/men/oversized-fit/hoodies" },
         ],
       },
@@ -71,7 +78,10 @@ const categories = [
         href: "/shop/men/footwear",
         subItems: [
           { name: "Casual Shoes", href: "/shop/men/footwear/casual-shoes" },
-          { name: "Flip Flops & Slippers", href: "/shop/men/footwear/flip-flops-slippers" },
+          {
+            name: "Flip Flops & Slippers",
+            href: "/shop/men/footwear/flip-flops-slippers",
+          },
           { name: "Formal Shoes", href: "/shop/men/footwear/formal-shoes" },
           { name: "Sandals", href: "/shop/men/footwear/sandals" },
           { name: "Sneakers", href: "/shop/men/footwear/sneakers" },
@@ -83,11 +93,20 @@ const categories = [
         href: "/shop/men/accessories",
         subItems: [
           { name: "Backpacks", href: "/shop/men/accessories/backpacks" },
-          { name: "Bags & Wallets", href: "/shop/men/accessories/bags-wallets" },
+          {
+            name: "Bags & Wallets",
+            href: "/shop/men/accessories/bags-wallets",
+          },
           { name: "Belts", href: "/shop/men/accessories/belts" },
           { name: "Caps & Hats", href: "/shop/men/accessories/caps-hats" },
-          { name: "Fashion Accessories", href: "/shop/men/accessories/fashion-accessories" },
-          { name: "Luggage & Trolleys", href: "/shop/men/accessories/luggage-trolleys" },
+          {
+            name: "Fashion Accessories",
+            href: "/shop/men/accessories/fashion-accessories",
+          },
+          {
+            name: "Luggage & Trolleys",
+            href: "/shop/men/accessories/luggage-trolleys",
+          },
           { name: "Socks", href: "/shop/men/accessories/socks" },
           { name: "Sunglasses", href: "/shop/men/accessories/sunglasses" },
           { name: "Watches", href: "/shop/men/accessories/watches" },
@@ -97,10 +116,19 @@ const categories = [
         name: "Western Wear",
         href: "/shop/men/western-wear",
         subItems: [
-          { name: "Jackets & Coats", href: "/shop/men/western-wear/jackets-coats" },
+          {
+            name: "Jackets & Coats",
+            href: "/shop/men/western-wear/jackets-coats",
+          },
           { name: "Jeans", href: "/shop/men/western-wear/jeans" },
-          { name: "Shorts & 3/4ths", href: "/shop/men/western-wear/shorts-3-4ths" },
-          { name: "Sweatshirts & Hoodies", href: "/shop/men/western-wear/sweatshirts-hoodies" },
+          {
+            name: "Shorts & 3/4ths",
+            href: "/shop/men/western-wear/shorts-3-4ths",
+          },
+          {
+            name: "Sweatshirts & Hoodies",
+            href: "/shop/men/western-wear/sweatshirts-hoodies",
+          },
           { name: "Track Pants", href: "/shop/men/western-wear/track-pants" },
           { name: "Boxers", href: "/shop/men/western-wear/boxers" },
         ],
@@ -144,8 +172,14 @@ const categories = [
         subItems: [
           { name: "Shirts", href: "/shop/women/oversized-fit/shirts" },
           { name: "Pants", href: "/shop/women/oversized-fit/pants" },
-          { name: "Polo T-Shirts", href: "/shop/women/oversized-fit/polo-t-shirts" },
-          { name: "Round Neck T-Shirts", href: "/shop/women/oversized-fit/round-neck-t-shirts" },
+          {
+            name: "Polo T-Shirts",
+            href: "/shop/women/oversized-fit/polo-t-shirts",
+          },
+          {
+            name: "Round Neck T-Shirts",
+            href: "/shop/women/oversized-fit/round-neck-t-shirts",
+          },
           { name: "Hoodies", href: "/shop/women/oversized-fit/hoodies" },
         ],
       },
@@ -163,8 +197,14 @@ const categories = [
         subItems: [
           { name: "Casual Shoes", href: "/shop/women/footwear/casual-shoes" },
           { name: "Sport Shoes", href: "/shop/women/footwear/sport-shoes" },
-          { name: "Flip Flops & Slippers", href: "/shop/women/footwear/flip-flops-slippers" },
-          { name: "Heeled Sandals", href: "/shop/women/footwear/heeled-sandals" },
+          {
+            name: "Flip Flops & Slippers",
+            href: "/shop/women/footwear/flip-flops-slippers",
+          },
+          {
+            name: "Heeled Sandals",
+            href: "/shop/women/footwear/heeled-sandals",
+          },
           { name: "Heeled Shoes", href: "/shop/women/footwear/heeled-shoes" },
         ],
       },
@@ -175,10 +215,16 @@ const categories = [
           { name: "Sunglasses", href: "/shop/women/accessories/sunglasses" },
           { name: "Watches", href: "/shop/women/accessories/watches" },
           { name: "Bags", href: "/shop/women/accessories/bags" },
-          { name: "Belts & Wallets", href: "/shop/women/accessories/belts-wallets" },
+          {
+            name: "Belts & Wallets",
+            href: "/shop/women/accessories/belts-wallets",
+          },
           { name: "Socks", href: "/shop/women/accessories/socks" },
           { name: "Caps", href: "/shop/women/accessories/caps" },
-          { name: "Luggage & Trolleys", href: "/shop/women/accessories/luggage-trolleys" },
+          {
+            name: "Luggage & Trolleys",
+            href: "/shop/women/accessories/luggage-trolleys",
+          },
         ],
       },
       {
@@ -187,13 +233,28 @@ const categories = [
         subItems: [
           { name: "Tops", href: "/shop/women/western-wear/tops" },
           { name: "T-Shirts", href: "/shop/women/western-wear/t-shirts" },
-          { name: "Jeans & Jeggings", href: "/shop/women/western-wear/jeans-jeggings" },
-          { name: "Trousers & Pants", href: "/shop/women/western-wear/trousers-pants" },
+          {
+            name: "Jeans & Jeggings",
+            href: "/shop/women/western-wear/jeans-jeggings",
+          },
+          {
+            name: "Trousers & Pants",
+            href: "/shop/women/western-wear/trousers-pants",
+          },
           { name: "Shirts", href: "/shop/women/western-wear/shirts" },
           { name: "Track Pants", href: "/shop/women/western-wear/track-pants" },
-          { name: "Skirts & Shorts", href: "/shop/women/western-wear/skirts-shorts" },
-          { name: "Jackets & Coats", href: "/shop/women/western-wear/jackets-coats" },
-          { name: "Sweatshirts & Hoodies", href: "/shop/women/western-wear/sweatshirts-hoodies" },
+          {
+            name: "Skirts & Shorts",
+            href: "/shop/women/western-wear/skirts-shorts",
+          },
+          {
+            name: "Jackets & Coats",
+            href: "/shop/women/western-wear/jackets-coats",
+          },
+          {
+            name: "Sweatshirts & Hoodies",
+            href: "/shop/women/western-wear/sweatshirts-hoodies",
+          },
           { name: "Sweaters", href: "/shop/women/western-wear/sweaters" },
         ],
       },
@@ -207,7 +268,10 @@ const categories = [
           { name: "Kurtis", href: "/shop/women/ethnic-festive/kurtis" },
           { name: "Sarees", href: "/shop/women/ethnic-festive/sarees" },
           { name: "Dupattas", href: "/shop/women/ethnic-festive/dupattas" },
-          { name: "Diwali Dresses", href: "/shop/women/ethnic-festive/diwali-dresses" },
+          {
+            name: "Diwali Dresses",
+            href: "/shop/women/ethnic-festive/diwali-dresses",
+          },
         ],
       },
     ],
@@ -221,10 +285,16 @@ const categories = [
         href: "/shop/kids/boy",
         subItems: [
           { name: "Clothing", href: "/shop/kids/boy/clothing" },
-          { name: "Innerwear and Sleepwear", href: "/shop/kids/boy/innerwear-sleepwear" },
+          {
+            name: "Innerwear and Sleepwear",
+            href: "/shop/kids/boy/innerwear-sleepwear",
+          },
           { name: "Toys and Babycare", href: "/shop/kids/boy/toys-babycare" },
           { name: "Footwear", href: "/shop/kids/boy/footwear" },
-          { name: "Festive and Ethnic Wear", href: "/shop/kids/boy/festive-ethnic" },
+          {
+            name: "Festive and Ethnic Wear",
+            href: "/shop/kids/boy/festive-ethnic",
+          },
         ],
       },
       {
@@ -232,10 +302,16 @@ const categories = [
         href: "/shop/kids/girl",
         subItems: [
           { name: "Clothing", href: "/shop/kids/girl/clothing" },
-          { name: "Innerwear and Sleepwear", href: "/shop/kids/girl/innerwear-sleepwear" },
+          {
+            name: "Innerwear and Sleepwear",
+            href: "/shop/kids/girl/innerwear-sleepwear",
+          },
           { name: "Toys and Babycare", href: "/shop/kids/girl/toys-babycare" },
           { name: "Footwear", href: "/shop/kids/girl/footwear" },
-          { name: "Festive and Ethnic Wear", href: "/shop/kids/girl/festive-ethnic" },
+          {
+            name: "Festive and Ethnic Wear",
+            href: "/shop/kids/girl/festive-ethnic",
+          },
         ],
       },
     ],
@@ -265,7 +341,10 @@ const categories = [
           { name: "Lip Balm", href: "/shop/beauty/makeup/lip-balm" },
           { name: "Nail Care", href: "/shop/beauty/makeup/nail-care" },
           { name: "Mascara", href: "/shop/beauty/makeup/mascara" },
-          { name: "Eyeliner & Kajals", href: "/shop/beauty/makeup/eyeliner-kajals" },
+          {
+            name: "Eyeliner & Kajals",
+            href: "/shop/beauty/makeup/eyeliner-kajals",
+          },
           { name: "Foundation", href: "/shop/beauty/makeup/foundation" },
         ],
       },
@@ -301,39 +380,45 @@ const categories = [
         name: "Men Grooming",
         href: "/shop/beauty/men-grooming",
         subItems: [
-          { name: "Shaving Essentials", href: "/shop/beauty/men-grooming/shaving-essentials" },
-          { name: "Beard Essentials", href: "/shop/beauty/men-grooming/beard-essentials" },
+          {
+            name: "Shaving Essentials",
+            href: "/shop/beauty/men-grooming/shaving-essentials",
+          },
+          {
+            name: "Beard Essentials",
+            href: "/shop/beauty/men-grooming/beard-essentials",
+          },
           { name: "Hair Wax", href: "/shop/beauty/men-grooming/hair-wax" },
           { name: "Deodorants", href: "/shop/beauty/men-grooming/deodorants" },
         ],
       },
     ],
   },
-]
+];
 
 export default function Header() {
-  const [isScrolled, setIsScrolled] = useState(false)
-  const [cartCount, setCartCount] = useState(3) // Mock cart count
-  const { user, signOut } = useAuth()
+  const [isScrolled, setIsScrolled] = useState(false);
+  const { cartCount } = useCart();
+  const { user, signOut } = useAuth();
 
   // Add scroll effect
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10)
-    }
-    window.addEventListener("scroll", handleScroll)
-    return () => window.removeEventListener("scroll", handleScroll)
-  }, [])
+      setIsScrolled(window.scrollY > 10);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   // Get user initials (first two letters of name)
   const getUserInitials = () => {
-    if (!user || !user.name) return ""
-    const nameParts = user.name.split(" ")
+    if (!user || !user.name) return "";
+    const nameParts = user.name.split(" ");
     if (nameParts.length > 1) {
-      return (nameParts[0][0] + nameParts[1][0]).toUpperCase()
+      return (nameParts[0][0] + nameParts[1][0]).toUpperCase();
     }
-    return user.name.substring(0, 2).toUpperCase()
-  }
+    return user.name.substring(0, 2).toUpperCase();
+  };
 
   return (
     <header
@@ -351,7 +436,9 @@ export default function Header() {
             </div>
           </div>
           <div>
-            <span className="animate-pulse">Free shipping on orders over ₹999!</span>
+            <span className="animate-pulse">
+              Free shipping on orders over ₹999!
+            </span>
           </div>
         </div>
       </div>
@@ -374,7 +461,9 @@ export default function Header() {
               <span className="text-lg font-bold tracking-tight bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
                 Pick&Fit
               </span>
-              <span className="text-[10px] text-muted-foreground">Shop, Try, Keep</span>
+              <span className="text-[10px] text-muted-foreground">
+                Shop, Try, Keep
+              </span>
             </div>
           </Link>
 
@@ -393,7 +482,11 @@ export default function Header() {
           {/* User Actions */}
           <div className="flex items-center gap-5">
             <div className="hidden md:flex items-center gap-5">
-              <Button variant="ghost" size="sm" className="relative group h-9 px-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="relative group h-9 px-2"
+              >
                 <Heart className="h-[18px] w-[18px] group-hover:text-red-500 transition-colors" />
                 <span className="sr-only">Wishlist</span>
                 <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
@@ -401,15 +494,21 @@ export default function Header() {
                 </span>
               </Button>
 
-              <Button variant="ghost" size="sm" className="relative group h-9 px-2">
-                <ShoppingBag className="h-[18px] w-[18px] group-hover:text-green-500 transition-colors" />
-                <span className="sr-only">Cart</span>
-                {cartCount > 0 && (
-                  <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
-                    {cartCount}
-                  </span>
-                )}
-              </Button>
+              <Link href="/cart" className="relative">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="relative group h-9 px-2"
+                >
+                  <ShoppingBag className="h-[18px] w-[18px] group-hover:text-green-500 transition-colors" />
+                  <span className="sr-only">Cart</span>
+                  {cartCount > 0 && (
+                    <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+                      {cartCount}
+                    </span>
+                  )}
+                </Button>
+              </Link>
 
               <ThemeToggle />
 
@@ -437,16 +536,26 @@ export default function Header() {
                       <Link href="/wishlist">Wishlist</Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={signOut} className="text-red-500">
+                    <DropdownMenuItem
+                      onClick={signOut}
+                      className="text-red-500"
+                    >
                       <LogOut className="mr-2 h-4 w-4" />
                       <span>Sign out</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
-                <Button variant="outline" size="sm" className="group overflow-hidden relative h-9" asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="group overflow-hidden relative h-9"
+                  asChild
+                >
                   <Link href="/signin">
-                    <span className="relative z-10 group-hover:text-white transition-colors">Sign In</span>
+                    <span className="relative z-10 group-hover:text-white transition-colors">
+                      Sign In
+                    </span>
                     <span className="absolute inset-0 bg-primary w-0 group-hover:w-full transition-all duration-300 ease-in-out -z-0"></span>
                   </Link>
                 </Button>
@@ -455,15 +564,21 @@ export default function Header() {
 
             {/* Mobile Menu Button */}
             <div className="md:hidden flex items-center gap-3">
-              <Button variant="ghost" size="sm" className="relative group h-9 px-2">
-                <ShoppingBag className="h-[18px] w-[18px]" />
-                <span className="sr-only">Cart</span>
-                {cartCount > 0 && (
-                  <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
-                    {cartCount}
-                  </span>
-                )}
-              </Button>
+              <Link href="/cart" className="relative">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="relative group h-9 px-2"
+                >
+                  <ShoppingBag className="h-[18px] w-[18px]" />
+                  <span className="sr-only">Cart</span>
+                  {cartCount > 0 && (
+                    <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+                      {cartCount}
+                    </span>
+                  )}
+                </Button>
+              </Link>
 
               <Sheet>
                 <SheetTrigger asChild>
@@ -476,7 +591,11 @@ export default function Header() {
                   <div className="flex flex-col h-full">
                     <div className="py-4 border-b">
                       <div className="flex items-center space-x-2 mb-4">
-                        <Input type="search" placeholder="Search products..." className="w-full" />
+                        <Input
+                          type="search"
+                          placeholder="Search products..."
+                          className="w-full"
+                        />
                       </div>
                       {!user ? (
                         <div className="flex gap-2 mt-4">
@@ -494,18 +613,28 @@ export default function Header() {
                           </div>
                           <div>
                             <p className="font-medium">{user.name}</p>
-                            <p className="text-xs text-muted-foreground">{user.email}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {user.email}
+                            </p>
                           </div>
                         </div>
                       )}
                     </div>
                     <MobileCategoryMenu
                       categories={categories}
-                      onClose={() => document.querySelector("[data-radix-collection-item]")?.click()}
+                      onClose={() =>
+                        document
+                          .querySelector("[data-radix-collection-item]")
+                          ?.click()
+                      }
                     />
                     <div className="mt-auto border-t py-4">
                       <div className="flex items-center justify-around">
-                        <Button variant="ghost" size="icon" className="relative">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="relative"
+                        >
                           <Heart className="h-5 w-5" />
                           <span className="sr-only">Wishlist</span>
                           <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
@@ -542,7 +671,7 @@ export default function Header() {
                     subcategories={category.subcategories}
                     href={category.href}
                   />
-                )
+                );
               }
               return (
                 <HierarchicalDropdown
@@ -551,16 +680,21 @@ export default function Header() {
                   subcategories={category.subcategories}
                   href={category.href}
                 />
-              )
+              );
             })}
             <Link
               href="/new-arrivals"
               className="text-sm font-medium transition-colors hover:text-primary relative group"
             >
               New Arrivals
-              <Badge className="ml-1 bg-red-500 hover:bg-red-600 absolute -top-3 -right-8 text-[10px] py-0">New</Badge>
+              <Badge className="ml-1 bg-red-500 hover:bg-red-600 absolute -top-3 -right-8 text-[10px] py-0">
+                New
+              </Badge>
             </Link>
-            <Link href="/sale" className="text-sm font-medium transition-colors hover:text-primary relative group">
+            <Link
+              href="/sale"
+              className="text-sm font-medium transition-colors hover:text-primary relative group"
+            >
               Sale
               <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary group-hover:w-full transition-all duration-300"></span>
             </Link>
@@ -572,9 +706,13 @@ export default function Header() {
       <div className="md:hidden container border-b py-2 px-4">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input type="search" placeholder="Search products..." className="w-full h-9 pl-10 pr-4" />
+          <Input
+            type="search"
+            placeholder="Search products..."
+            className="w-full h-9 pl-10 pr-4"
+          />
         </div>
       </div>
     </header>
-  )
+  );
 }

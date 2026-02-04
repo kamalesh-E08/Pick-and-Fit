@@ -1,76 +1,90 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState, useRef } from "react"
-import Image from "next/image"
-import Link from "next/link"
-import { Heart, ShoppingBag, Star, Truck, ArrowRight, ZoomIn } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import type { Product } from "@/lib/product-data"
-import "../../../app/product-zoom.css"
+import { useState, useRef } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import {
+  Heart,
+  ShoppingBag,
+  Star,
+  Truck,
+  ArrowRight,
+  ZoomIn,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { toast } from "@/components/ui/use-toast";
+import { useCart } from "@/context/cart-context";
+import type { Product } from "@/lib/product-data";
+import "../../../app/product-zoom.css";
 
 interface ProductDetailClientProps {
-  product: Product
-  relatedProducts: Product[]
+  product: Product;
+  relatedProducts: Product[];
 }
 
-export default function ProductDetailClient({ product, relatedProducts }: ProductDetailClientProps) {
-  const [selectedSize, setSelectedSize] = useState<string | null>(null)
-  const [selectedColor, setSelectedColor] = useState<string | null>(null)
-  const [quantity, setQuantity] = useState(1)
-  const [isZoomed, setIsZoomed] = useState(false)
-  const [zoomPosition, setZoomPosition] = useState({ x: 0, y: 0 })
-  const [showZoomModal, setShowZoomModal] = useState(false)
-  const imageRef = useRef<HTMLDivElement>(null)
-  const zoomImageRef = useRef<HTMLImageElement>(null)
+export default function ProductDetailClient({
+  product,
+  relatedProducts,
+}: ProductDetailClientProps) {
+  const { addItem } = useCart();
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
+  const [selectedColor, setSelectedColor] = useState<string | null>(null);
+  const [quantity, setQuantity] = useState(1);
+  const [isZoomed, setIsZoomed] = useState(false);
+  const [zoomPosition, setZoomPosition] = useState({ x: 0, y: 0 });
+  const [showZoomModal, setShowZoomModal] = useState(false);
+  const imageRef = useRef<HTMLDivElement>(null);
+  const zoomImageRef = useRef<HTMLImageElement>(null);
 
   const handleSizeSelect = (size: string) => {
-    setSelectedSize(size)
-  }
+    setSelectedSize(size);
+  };
 
   const handleColorSelect = (color: string) => {
-    setSelectedColor(color)
-  }
+    setSelectedColor(color);
+  };
 
   const handleQuantityChange = (newQuantity: number) => {
     if (newQuantity >= 1) {
-      setQuantity(newQuantity)
+      setQuantity(newQuantity);
     }
-  }
+  };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!imageRef.current) return
+    if (!imageRef.current) return;
 
-    const { left, top, width, height } = imageRef.current.getBoundingClientRect()
-    const x = ((e.clientX - left) / width) * 100
-    const y = ((e.clientY - top) / height) * 100
+    const { left, top, width, height } =
+      imageRef.current.getBoundingClientRect();
+    const x = ((e.clientX - left) / width) * 100;
+    const y = ((e.clientY - top) / height) * 100;
 
-    setZoomPosition({ x, y })
-  }
+    setZoomPosition({ x, y });
+  };
 
   const handleMouseEnter = () => {
-    setIsZoomed(true)
-  }
+    setIsZoomed(true);
+  };
 
   const handleMouseLeave = () => {
-    setIsZoomed(false)
-  }
+    setIsZoomed(false);
+  };
 
   const openZoomModal = () => {
-    setShowZoomModal(true)
-  }
+    setShowZoomModal(true);
+  };
 
   const closeZoomModal = () => {
-    setShowZoomModal(false)
-  }
+    setShowZoomModal(false);
+  };
 
   // Handle image loading errors
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    e.currentTarget.src = "/diverse-products-still-life.png"
-  }
+    e.currentTarget.src = "/diverse-products-still-life.png";
+  };
 
   return (
     <div className="container px-4 py-6">
@@ -78,21 +92,31 @@ export default function ProductDetailClient({ product, relatedProducts }: Produc
       <nav className="mb-4">
         <ol className="flex flex-wrap items-center text-xs">
           <li className="flex items-center">
-            <Link href="/" className="text-muted-foreground hover:text-foreground">
+            <Link
+              href="/"
+              className="text-muted-foreground hover:text-foreground"
+            >
               Home
             </Link>
           </li>
           <li className="flex items-center">
             <span className="mx-2 text-muted-foreground">/</span>
-            <Link href="/shop" className="text-muted-foreground hover:text-foreground">
+            <Link
+              href="/shop"
+              className="text-muted-foreground hover:text-foreground"
+            >
               Shop
             </Link>
           </li>
           {product.gender && product.gender !== "beauty" && (
             <li className="flex items-center">
               <span className="mx-2 text-muted-foreground">/</span>
-              <Link href={`/shop/${product.gender}`} className="text-muted-foreground hover:text-foreground">
-                {product.gender.charAt(0).toUpperCase() + product.gender.slice(1)}
+              <Link
+                href={`/shop/${product.gender}`}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                {product.gender.charAt(0).toUpperCase() +
+                  product.gender.slice(1)}
               </Link>
             </li>
           )}
@@ -161,7 +185,9 @@ export default function ProductDetailClient({ product, relatedProducts }: Produc
                 <Star
                   key={i}
                   className={`h-4 w-4 ${
-                    i < Math.floor(product.rating) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+                    i < Math.floor(product.rating)
+                      ? "fill-yellow-400 text-yellow-400"
+                      : "text-gray-300"
                   }`}
                 />
               ))}
@@ -172,7 +198,9 @@ export default function ProductDetailClient({ product, relatedProducts }: Produc
           </div>
 
           <div className="flex items-center gap-2 mb-4">
-            <span className="text-2xl font-bold">₹{product.price.toLocaleString()}</span>
+            <span className="text-2xl font-bold">
+              ₹{product.price.toLocaleString()}
+            </span>
             {product.originalPrice > product.price && (
               <span className="text-lg text-muted-foreground line-through">
                 ₹{product.originalPrice.toLocaleString()}
@@ -180,12 +208,19 @@ export default function ProductDetailClient({ product, relatedProducts }: Produc
             )}
             {product.originalPrice > product.price && (
               <span className="text-sm font-medium text-green-600">
-                {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% off
+                {Math.round(
+                  ((product.originalPrice - product.price) /
+                    product.originalPrice) *
+                    100,
+                )}
+                % off
               </span>
             )}
           </div>
 
-          <p className="text-muted-foreground mb-4">{product.shortDescription}</p>
+          <p className="text-muted-foreground mb-4">
+            {product.shortDescription}
+          </p>
 
           {/* Brand and Material (if available) */}
           {product.brand && (
@@ -258,7 +293,10 @@ export default function ProductDetailClient({ product, relatedProducts }: Produc
                 -
               </button>
               <span className="flex-1 text-center">{quantity}</span>
-              <button className="px-3 py-1 text-lg" onClick={() => handleQuantityChange(quantity + 1)}>
+              <button
+                className="px-3 py-1 text-lg"
+                onClick={() => handleQuantityChange(quantity + 1)}
+              >
                 +
               </button>
             </div>
@@ -266,11 +304,38 @@ export default function ProductDetailClient({ product, relatedProducts }: Produc
 
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-3 mb-6">
-            <Button className="flex-1 gap-2">
+            <Button
+              className="flex-1 gap-2"
+              onClick={() => {
+                addItem({
+                  id: product.id,
+                  name: product.name,
+                  price: product.price,
+                  image: product.image,
+                  quantity,
+                  selectedColor: selectedColor ?? null,
+                  selectedSize: selectedSize ?? null,
+                  originalPrice: product.originalPrice,
+                });
+                toast({
+                  title: "Added to cart",
+                  description: `${product.name} added to cart.`,
+                });
+              }}
+            >
               <ShoppingBag className="h-5 w-5" />
               Add to Cart
             </Button>
-            <Button variant="outline" className="flex-1 gap-2">
+            <Button
+              variant="outline"
+              className="flex-1 gap-2"
+              onClick={() => {
+                toast({
+                  title: "Added to wishlist",
+                  description: `${product.name} saved to wishlist.`,
+                });
+              }}
+            >
               <Heart className="h-5 w-5" />
               Add to Wishlist
             </Button>
@@ -294,7 +359,9 @@ export default function ProductDetailClient({ product, relatedProducts }: Produc
                 <Truck className="h-5 w-5 mt-0.5 text-muted-foreground" />
                 <div>
                   <h4 className="font-medium">Delivery Information</h4>
-                  <p className="text-sm text-muted-foreground">{product.deliveryInfo}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {product.deliveryInfo}
+                  </p>
                 </div>
               </div>
             </div>
@@ -304,14 +371,18 @@ export default function ProductDetailClient({ product, relatedProducts }: Produc
           {product.returnPolicy && (
             <div className="mb-4">
               <h4 className="font-medium">Return Policy</h4>
-              <p className="text-sm text-muted-foreground">{product.returnPolicy}</p>
+              <p className="text-sm text-muted-foreground">
+                {product.returnPolicy}
+              </p>
             </div>
           )}
 
           {/* Product Description */}
           <div className="border-t pt-6">
             <h3 className="font-medium mb-3">Product Description</h3>
-            <p className="text-muted-foreground whitespace-pre-line">{product.description}</p>
+            <p className="text-muted-foreground whitespace-pre-line">
+              {product.description}
+            </p>
           </div>
         </div>
       </div>
@@ -336,18 +407,19 @@ export default function ProductDetailClient({ product, relatedProducts }: Produc
             )}
 
             {/* Care Instructions */}
-            {product.careInstructions && product.careInstructions.length > 0 && (
-              <div>
-                <h4 className="font-medium mb-2">Care Instructions</h4>
-                <ul className="list-disc pl-5 space-y-1">
-                  {product.careInstructions.map((instruction, index) => (
-                    <li key={index} className="text-muted-foreground">
-                      {instruction}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+            {product.careInstructions &&
+              product.careInstructions.length > 0 && (
+                <div>
+                  <h4 className="font-medium mb-2">Care Instructions</h4>
+                  <ul className="list-disc pl-5 space-y-1">
+                    {product.careInstructions.map((instruction, index) => (
+                      <li key={index} className="text-muted-foreground">
+                        {instruction}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
           </div>
         </div>
       )}
@@ -357,14 +429,20 @@ export default function ProductDetailClient({ product, relatedProducts }: Produc
         <div className="mt-8">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold">You May Also Like</h2>
-            <Link href="/shop" className="text-sm font-medium flex items-center gap-1 hover:underline">
+            <Link
+              href="/shop"
+              className="text-sm font-medium flex items-center gap-1 hover:underline"
+            >
               View All <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {relatedProducts.map((relatedProduct) => (
-              <Link key={relatedProduct.id} href={`/product/${relatedProduct.id}`}>
+              <Link
+                key={relatedProduct.id}
+                href={`/product/${relatedProduct.id}`}
+              >
                 <Card className="overflow-hidden h-full hover:shadow-md transition-shadow">
                   <div className="relative aspect-square">
                     <Image
@@ -376,9 +454,13 @@ export default function ProductDetailClient({ product, relatedProducts }: Produc
                     />
                   </div>
                   <CardContent className="p-3">
-                    <h3 className="font-medium text-sm line-clamp-1">{relatedProduct.name}</h3>
+                    <h3 className="font-medium text-sm line-clamp-1">
+                      {relatedProduct.name}
+                    </h3>
                     <div className="flex items-center justify-between mt-1">
-                      <span className="font-medium text-sm">₹{relatedProduct.price.toLocaleString()}</span>
+                      <span className="font-medium text-sm">
+                        ₹{relatedProduct.price.toLocaleString()}
+                      </span>
                       <div className="flex items-center gap-1">
                         <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
                         <span className="text-xs">{relatedProduct.rating}</span>
@@ -394,7 +476,10 @@ export default function ProductDetailClient({ product, relatedProducts }: Produc
 
       {/* Zoom Modal */}
       {showZoomModal && (
-        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={closeZoomModal}>
+        <div
+          className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
+          onClick={closeZoomModal}
+        >
           <div className="relative max-w-4xl max-h-[80vh] overflow-hidden">
             <img
               ref={zoomImageRef}
@@ -406,8 +491,8 @@ export default function ProductDetailClient({ product, relatedProducts }: Produc
             <button
               className="absolute top-4 right-4 bg-white/80 p-2 rounded-full"
               onClick={(e) => {
-                e.stopPropagation()
-                closeZoomModal()
+                e.stopPropagation();
+                closeZoomModal();
               }}
             >
               <svg
@@ -429,5 +514,5 @@ export default function ProductDetailClient({ product, relatedProducts }: Produc
         </div>
       )}
     </div>
-  )
+  );
 }

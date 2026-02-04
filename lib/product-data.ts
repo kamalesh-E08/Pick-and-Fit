@@ -1,33 +1,33 @@
 // Product interface
 export interface Product {
-  id: string
-  name: string
-  price: number
-  originalPrice: number
-  image: string
-  category: string
-  subcategory?: string
-  gender?: string
-  kidGender?: string
-  rating: number
-  reviewCount?: number
-  tags?: string[]
-  shortDescription?: string
-  description?: string
-  sizes?: string[]
-  colors?: string[]
-  material?: string
-  brand?: string
-  features?: string[]
-  careInstructions?: string[]
-  deliveryInfo?: string
-  returnPolicy?: string
-  fitType?: string
-  volume?: string
-  ingredients?: string[]
-  benefits?: string[]
-  suitableFor?: string[]
-  howToUse?: string[]
+  id: string;
+  name: string;
+  price: number;
+  originalPrice: number;
+  image: string;
+  category: string;
+  subcategory?: string;
+  gender?: string;
+  kidGender?: string;
+  rating: number;
+  reviewCount?: number;
+  tags?: string[];
+  shortDescription?: string;
+  description?: string;
+  sizes?: string[];
+  colors?: string[];
+  material?: string;
+  brand?: string;
+  features?: string[];
+  careInstructions?: string[];
+  deliveryInfo?: string;
+  returnPolicy?: string;
+  fitType?: string;
+  volume?: string;
+  ingredients?: string[];
+  benefits?: string[];
+  suitableFor?: string[];
+  howToUse?: string[];
 }
 
 // Sample product data - updated with numeric IDs
@@ -544,8 +544,14 @@ const products: Product[] = [
       "Pre-shrunk fabric",
       "Machine washable",
     ],
-    careInstructions: ["Machine wash cold with like colors", "Tumble dry low", "Do not bleach", "Do not iron print"],
-    deliveryInfo: "Free delivery on orders above ₹999. Standard delivery in 3-5 business days.",
+    careInstructions: [
+      "Machine wash cold with like colors",
+      "Tumble dry low",
+      "Do not bleach",
+      "Do not iron print",
+    ],
+    deliveryInfo:
+      "Free delivery on orders above ₹999. Standard delivery in 3-5 business days.",
     returnPolicy: "Easy 30-day returns if you're not completely satisfied.",
     fitType: "Regular fit",
   },
@@ -562,7 +568,8 @@ const products: Product[] = [
     rating: 4.5,
     reviewCount: 72,
     tags: ["Durable", "Adjustable", "Comfortable"],
-    shortDescription: "Durable denim jeans with adjustable waistband for growing kids",
+    shortDescription:
+      "Durable denim jeans with adjustable waistband for growing kids",
     description:
       "These durable denim jeans are designed for active kids who need clothing that can keep up with their adventures. The adjustable waistband ensures a perfect fit as they grow, while the reinforced knees and pockets make these jeans perfect for everyday wear. Made from soft denim with just the right amount of stretch for comfort and mobility.",
     sizes: ["2-3Y", "4-5Y", "6-7Y", "8-9Y", "10-12Y"],
@@ -576,8 +583,14 @@ const products: Product[] = [
       "Soft inner lining for comfort",
       "Easy pull-on style for younger kids",
     ],
-    careInstructions: ["Machine wash cold inside out", "Tumble dry medium", "Do not bleach", "Warm iron if needed"],
-    deliveryInfo: "Free delivery on orders above ₹999. Standard delivery in 3-5 business days.",
+    careInstructions: [
+      "Machine wash cold inside out",
+      "Tumble dry medium",
+      "Do not bleach",
+      "Warm iron if needed",
+    ],
+    deliveryInfo:
+      "Free delivery on orders above ₹999. Standard delivery in 3-5 business days.",
     returnPolicy: "Easy 30-day returns if you're not completely satisfied.",
     fitType: "Regular fit",
   },
@@ -608,8 +621,14 @@ const products: Product[] = [
       "Tag-free design",
       "Maintains shape after washing",
     ],
-    careInstructions: ["Machine wash warm", "Tumble dry low", "Do not bleach", "Do not iron"],
-    deliveryInfo: "Free delivery on orders above ₹999. Standard delivery in 3-5 business days.",
+    careInstructions: [
+      "Machine wash warm",
+      "Tumble dry low",
+      "Do not bleach",
+      "Do not iron",
+    ],
+    deliveryInfo:
+      "Free delivery on orders above ₹999. Standard delivery in 3-5 business days.",
     returnPolicy: "Easy 30-day returns if you're not completely satisfied.",
     fitType: "Regular fit",
   },
@@ -629,7 +648,17 @@ const products: Product[] = [
     shortDescription: "Lightweight and durable sports shoes for active kids",
     description:
       "These lightweight and durable sports shoes are designed for active kids who love to run, jump, and play. The cushioned insoles provide comfort, while the non-slip soles ensure safety during play. The breathable materials keep feet cool and comfortable all day, and the easy-to-use closure makes them perfect for kids of all ages.",
-    sizes: ["UK 8C", "UK 9C", "UK 10C", "UK 11C", "UK 12C", "UK 13C", "UK 1", "UK 2", "UK 3"],
+    sizes: [
+      "UK 8C",
+      "UK 9C",
+      "UK 10C",
+      "UK 11C",
+      "UK 12C",
+      "UK 13C",
+      "UK 1",
+      "UK 2",
+      "UK 3",
+    ],
     colors: ["Blue/Red", "Black/Green", "Grey/Orange"],
     material: "Synthetic Mesh, Rubber Sole",
     brand: "KidStep",
@@ -647,7 +676,8 @@ const products: Product[] = [
       "Do not machine wash",
       "Remove insoles to dry separately if wet",
     ],
-    deliveryInfo: "Free delivery on orders above ₹999. Standard delivery in 3-5 business days.",
+    deliveryInfo:
+      "Free delivery on orders above ₹999. Standard delivery in 3-5 business days.",
     returnPolicy: "Easy 30-day returns if you're not completely satisfied.",
     fitType: "Regular fit",
   },
@@ -687,7 +717,8 @@ const products: Product[] = [
       "Do not bleach",
       "Iron on medium heat",
     ],
-    deliveryInfo: "Free delivery on orders above ₹999. Standard delivery in 3-5 business days.",
+    deliveryInfo:
+      "Free delivery on orders above ₹999. Standard delivery in 3-5 business days.",
     returnPolicy: "Easy 30-day returns if you're not completely satisfied.",
     fitType: "Regular fit",
   },
@@ -718,8 +749,14 @@ const products: Product[] = [
       "Long-sleeve top with matching bottoms",
       "Tag-free design for sensitive skin",
     ],
-    careInstructions: ["Machine wash cold", "Tumble dry low", "Do not bleach", "Iron on low heat if needed"],
-    deliveryInfo: "Free delivery on orders above ₹999. Standard delivery in 3-5 business days.",
+    careInstructions: [
+      "Machine wash cold",
+      "Tumble dry low",
+      "Do not bleach",
+      "Iron on low heat if needed",
+    ],
+    deliveryInfo:
+      "Free delivery on orders above ₹999. Standard delivery in 3-5 business days.",
     returnPolicy: "Easy 30-day returns if you're not completely satisfied.",
     fitType: "Relaxed fit",
   },
@@ -750,8 +787,14 @@ const products: Product[] = [
       "Includes matching choli top and dupatta",
       "Elastic waistband for comfort",
     ],
-    careInstructions: ["Dry clean only", "Store in a cool, dry place", "Do not bleach", "Iron on low heat"],
-    deliveryInfo: "Free delivery on orders above ₹999. Standard delivery in 3-5 business days.",
+    careInstructions: [
+      "Dry clean only",
+      "Store in a cool, dry place",
+      "Do not bleach",
+      "Iron on low heat",
+    ],
+    deliveryInfo:
+      "Free delivery on orders above ₹999. Standard delivery in 3-5 business days.",
     returnPolicy: "Easy 30-day returns if you're not completely satisfied.",
     fitType: "Regular fit",
   },
@@ -782,8 +825,14 @@ const products: Product[] = [
       "Multiple pockets",
       "Reflective details for visibility",
     ],
-    careInstructions: ["Machine wash cold", "Tumble dry low", "Do not bleach", "Do not iron"],
-    deliveryInfo: "Free delivery on orders above ₹999. Standard delivery in 3-5 business days.",
+    careInstructions: [
+      "Machine wash cold",
+      "Tumble dry low",
+      "Do not bleach",
+      "Do not iron",
+    ],
+    deliveryInfo:
+      "Free delivery on orders above ₹999. Standard delivery in 3-5 business days.",
     returnPolicy: "Easy 30-day returns if you're not completely satisfied.",
     fitType: "Regular fit",
   },
@@ -814,8 +863,14 @@ const products: Product[] = [
       "Easy pull-on style",
       "Machine washable",
     ],
-    careInstructions: ["Machine wash cold", "Tumble dry low", "Do not bleach", "Iron on low if needed"],
-    deliveryInfo: "Free delivery on orders above ₹999. Standard delivery in 3-5 business days.",
+    careInstructions: [
+      "Machine wash cold",
+      "Tumble dry low",
+      "Do not bleach",
+      "Iron on low if needed",
+    ],
+    deliveryInfo:
+      "Free delivery on orders above ₹999. Standard delivery in 3-5 business days.",
     returnPolicy: "Easy 30-day returns if you're not completely satisfied.",
     fitType: "Regular fit",
   },
@@ -845,8 +900,14 @@ const products: Product[] = [
       "Reinforced bottom for durability",
       "Name tag inside",
     ],
-    careInstructions: ["Spot clean with damp cloth", "Air dry", "Do not machine wash", "Do not bleach"],
-    deliveryInfo: "Free delivery on orders above ₹999. Standard delivery in 3-5 business days.",
+    careInstructions: [
+      "Spot clean with damp cloth",
+      "Air dry",
+      "Do not machine wash",
+      "Do not bleach",
+    ],
+    deliveryInfo:
+      "Free delivery on orders above ₹999. Standard delivery in 3-5 business days.",
     returnPolicy: "Easy 30-day returns if you're not completely satisfied.",
   },
 
@@ -886,7 +947,13 @@ const products: Product[] = [
       "Helps prevent breakouts",
       "Prepares skin for better absorption of other skincare products",
     ],
-    suitableFor: ["All skin types", "Sensitive skin", "Acne-prone skin", "Dry skin", "Combination skin"],
+    suitableFor: [
+      "All skin types",
+      "Sensitive skin",
+      "Acne-prone skin",
+      "Dry skin",
+      "Combination skin",
+    ],
     howToUse: [
       "Wet face with lukewarm water",
       "Apply a small amount to fingertips and work into a lather",
@@ -894,8 +961,10 @@ const products: Product[] = [
       "Rinse thoroughly with water",
       "Use morning and evening for best results",
     ],
-    deliveryInfo: "Free delivery on orders above ₹999. Standard delivery in 3-5 business days.",
-    returnPolicy: "Easy 30-day returns if you're not completely satisfied with your purchase.",
+    deliveryInfo:
+      "Free delivery on orders above ₹999. Standard delivery in 3-5 business days.",
+    returnPolicy:
+      "Easy 30-day returns if you're not completely satisfied with your purchase.",
   },
   {
     id: "hydrating-moisturizer",
@@ -932,7 +1001,12 @@ const products: Product[] = [
       "Improves skin elasticity and firmness",
       "Creates a smooth base for makeup application",
     ],
-    suitableFor: ["All skin types", "Dehydrated skin", "Mature skin", "Sensitive skin"],
+    suitableFor: [
+      "All skin types",
+      "Dehydrated skin",
+      "Mature skin",
+      "Sensitive skin",
+    ],
     howToUse: [
       "Apply to clean, dry skin",
       "Take a pea-sized amount and dot on forehead, cheeks, chin, and nose",
@@ -940,8 +1014,10 @@ const products: Product[] = [
       "Use morning and evening after cleansing",
       "For best results, apply while skin is slightly damp",
     ],
-    deliveryInfo: "Free delivery on orders above ₹999. Standard delivery in 3-5 business days.",
-    returnPolicy: "Easy 30-day returns if you're not completely satisfied with your purchase.",
+    deliveryInfo:
+      "Free delivery on orders above ₹999. Standard delivery in 3-5 business days.",
+    returnPolicy:
+      "Easy 30-day returns if you're not completely satisfied with your purchase.",
   },
   {
     id: "vitamin-c-serum",
@@ -955,7 +1031,8 @@ const products: Product[] = [
     rating: 4.9,
     reviewCount: 214,
     tags: ["Anti-aging", "Brightening"],
-    shortDescription: "Powerful vitamin C serum for brighter, younger-looking skin",
+    shortDescription:
+      "Powerful vitamin C serum for brighter, younger-looking skin",
     description:
       "Transform your skincare routine with our Vitamin C Serum. This potent formulation contains 20% stabilized vitamin C, hyaluronic acid, and vitamin E to brighten skin tone, reduce fine lines, and provide superior antioxidant protection. The lightweight, non-greasy formula absorbs quickly and works throughout the day to give you a radiant, youthful complexion.",
     volume: "30ml",
@@ -978,7 +1055,13 @@ const products: Product[] = [
       "Provides antioxidant protection against environmental damage",
       "Improves overall skin texture and tone",
     ],
-    suitableFor: ["All skin types", "Mature skin", "Dull skin", "Hyperpigmented skin", "Sun-damaged skin"],
+    suitableFor: [
+      "All skin types",
+      "Mature skin",
+      "Dull skin",
+      "Hyperpigmented skin",
+      "Sun-damaged skin",
+    ],
     howToUse: [
       "Apply to clean, dry skin in the morning",
       "Place 3-4 drops onto fingertips",
@@ -986,8 +1069,10 @@ const products: Product[] = [
       "Allow to fully absorb before applying moisturizer and sunscreen",
       "Store in a cool, dark place to maintain potency",
     ],
-    deliveryInfo: "Free delivery on orders above ₹999. Standard delivery in 3-5 business days.",
-    returnPolicy: "Easy 30-day returns if you're not completely satisfied with your purchase.",
+    deliveryInfo:
+      "Free delivery on orders above ₹999. Standard delivery in 3-5 business days.",
+    returnPolicy:
+      "Easy 30-day returns if you're not completely satisfied with your purchase.",
   },
   {
     id: "beard-oil",
@@ -1023,7 +1108,13 @@ const products: Product[] = [
       "Promotes healthier beard growth",
       "Adds a subtle natural shine",
     ],
-    suitableFor: ["All beard types", "Coarse beards", "New beard growth", "Itchy beards", "Dry skin under beard"],
+    suitableFor: [
+      "All beard types",
+      "Coarse beards",
+      "New beard growth",
+      "Itchy beards",
+      "Dry skin under beard",
+    ],
     howToUse: [
       "Apply to clean, dry beard",
       "Place 3-5 drops in palm and rub hands together",
@@ -1031,16 +1122,16 @@ const products: Product[] = [
       "Use fingertips to massage into skin beneath beard",
       "Use daily for best results",
     ],
-    deliveryInfo: "Free delivery on orders above ₹999. Standard delivery in 3-5 business days.",
-    returnPolicy: "Easy 30-day returns if you're not completely satisfied with your purchase.",
+    deliveryInfo:
+      "Free delivery on orders above ₹999. Standard delivery in 3-5 business days.",
+    returnPolicy:
+      "Easy 30-day returns if you're not completely satisfied with your purchase.",
   },
-]
+];
 
 // Function to get product by ID
 export function getProductById(id: string): Product {
-  console.log("Looking for product with ID:", id)
-  const product = products.find((p) => p.id === id)
-  console.log("Found product:", product ? product.name : "Not found")
+  const product = products.find((p) => p.id === id);
 
   if (!product) {
     // Return a default product if not found
@@ -1052,10 +1143,11 @@ export function getProductById(id: string): Product {
       image: "/product-not-found.png",
       category: "none",
       rating: 0,
-      description: "The product you are looking for does not exist or has been removed.",
-    }
+      description:
+        "The product you are looking for does not exist or has been removed.",
+    };
   }
-  return product
+  return product;
 }
 
 // Function to get related products (excluding the current one)
@@ -1063,32 +1155,34 @@ export function getRelatedProducts(currentId: string, limit = 4): Product[] {
   return products
     .filter((product) => product.id !== currentId)
     .sort(() => 0.5 - Math.random())
-    .slice(0, limit)
+    .slice(0, limit);
 }
 
 // Function to get all products
 export function getAllProducts(): Product[] {
-  return products
+  return products;
 }
 
 // Function to get products by category
 export function getProductsByCategory(category: string): Product[] {
-  return products.filter((product) => product.category === category)
+  return products.filter((product) => product.category === category);
 }
 
 // Function to get products by gender
 export function getProductsByGender(gender: string): Product[] {
-  return products.filter((product) => product.gender === gender)
+  return products.filter((product) => product.gender === gender);
 }
 
 // Function to get kids products
 export function getKidsProducts(): Product[] {
-  return products.filter((product) => product.gender === "kids")
+  return products.filter((product) => product.gender === "kids");
 }
 
 // Function to get kids products by gender
 export function getKidsByGender(kidGender: string): Product[] {
-  return products.filter((product) => product.gender === "kids" && product.kidGender === kidGender)
+  return products.filter(
+    (product) => product.gender === "kids" && product.kidGender === kidGender,
+  );
 }
 
 // Beauty products for the beauty shop
@@ -1498,4 +1592,4 @@ export const beautyProducts = [
     isBestSeller: true,
     reviewCount: 84,
   },
-]
+];

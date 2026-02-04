@@ -1,8 +1,10 @@
-import Link from "next/link"
-import Image from "next/image"
-import { Card, CardContent, CardFooter } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { ShoppingBag } from "lucide-react"
+import Link from "next/link";
+import Image from "next/image";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { ShoppingBag } from "lucide-react";
+import { useCart } from "@/context/cart-context";
+import { toast } from "@/components/ui/use-toast";
 
 const products = [
   {
@@ -47,15 +49,21 @@ const products = [
     image: "/gray-hooded-sweatshirt.png",
     href: "/product/hooded-sweatshirt",
   },
-]
+];
 
 export default function PopularProducts() {
+  const { addItem } = useCart();
+
   return (
     <section className="container px-4">
       <div className="flex flex-col gap-6">
         <div className="flex flex-col gap-2 text-center">
-          <h2 className="text-3xl font-bold tracking-tight">Popular Products</h2>
-          <p className="text-muted-foreground">Our best-selling items loved by customers</p>
+          <h2 className="text-3xl font-bold tracking-tight">
+            Popular Products
+          </h2>
+          <p className="text-muted-foreground">
+            Our best-selling items loved by customers
+          </p>
         </div>
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {products.map((product) => (
@@ -73,11 +81,28 @@ export default function PopularProducts() {
               <CardContent className="p-4">
                 <Link href={product.href} className="block">
                   <h3 className="font-semibold">{product.name}</h3>
-                  <p className="mt-1 font-medium">₹{product.price.toLocaleString("en-IN")}</p>
+                  <p className="mt-1 font-medium">
+                    ₹{product.price.toLocaleString("en-IN")}
+                  </p>
                 </Link>
               </CardContent>
               <CardFooter className="p-4 pt-0 flex gap-2">
-                <Button className="w-full">
+                <Button
+                  className="w-full"
+                  onClick={() => {
+                    addItem({
+                      id: String(product.id),
+                      name: product.name,
+                      price: product.price,
+                      image: product.image,
+                      quantity: 1,
+                    });
+                    toast({
+                      title: "Added to cart",
+                      description: `${product.name} added to cart.`,
+                    });
+                  }}
+                >
                   <ShoppingBag className="mr-2 h-4 w-4" />
                   Add to Cart
                 </Button>
@@ -95,5 +120,5 @@ export default function PopularProducts() {
         </div>
       </div>
     </section>
-  )
+  );
 }
