@@ -1,73 +1,130 @@
-"use client"
+"use client";
 
-import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  type ReactNode,
+} from "react";
 
 interface User {
-  name: string
-  email: string
+  id?: string;
+  name: string;
+  email: string;
 }
 
 interface AuthContextType {
-  user: User | null
-  isLoading: boolean
-  signIn: (email: string, password: string) => Promise<boolean>
-  signUp: (name: string, email: string, password: string) => Promise<boolean>
-  signOut: () => void
+  user: User | null;
+  isLoading: boolean;
+  error: string | null;
+  signIn: (email: string, password: string) => Promise<boolean>;
+  signUp: (name: string, email: string, password: string) => Promise<boolean>;
+  signOut: () => void;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Check if user is already logged in
   useEffect(() => {
-    const storedUser = localStorage.getItem("pickfit_user")
+    const storedUser = localStorage.getItem("pickfit_user");
     if (storedUser) {
-      setUser(JSON.parse(storedUser))
+      setUser(JSON.parse(storedUser));
     }
-    setIsLoading(false)
-  }, [])
+    setIsLoading(false);
+  }, []);
 
-  // Mock sign in function
+  // Sign in function - calls API
   const signIn = async (email: string, password: string) => {
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    try {
+      setError(null);
+      setIsLoading(true);
 
-    // For demo purposes, any email/password combination works
-    // In a real app, this would validate against a backend
-    const mockUser = { name: "Demo User", email }
-    setUser(mockUser)
-    localStorage.setItem("pickfit_user", JSON.stringify(mockUser))
-    return true
-  }
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
-  // Mock sign up function
+      if (!response.ok) {
+        const data = await response.json();
+        setError(data.error || "Login failed");
+        return false;
+      }
+
+      const data = await response.json();
+      const userData = data.user;
+      setUser(userData);
+      localStorage.setItem("pickfit_user", JSON.stringify(userData));
+      return true;
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : "Login failed";
+      setError(errorMsg);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Sign up function - calls API
   const signUp = async (name: string, email: string, password: string) => {
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    try {
+      setError(null);
+      setIsLoading(true);
 
-    // For demo purposes, any valid input works
-    const newUser = { name, email }
-    setUser(newUser)
-    localStorage.setItem("pickfit_user", JSON.stringify(newUser))
-    return true
-  }
+      const response = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        setError(data.error || "Signup failed");
+        return false;
+      }
+
+      const data = await response.json();
+      const userData = data.user;
+      setUser(userData);
+      localStorage.setItem("pickfit_user", JSON.stringify(userData));
+      return true;
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : "Signup failed";
+      setError(errorMsg);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Sign out function
   const signOut = () => {
-    setUser(null)
-    localStorage.removeItem("pickfit_user")
-  }
+    setUser(null);
+    localStorage.removeItem("pickfit_user");
+    if (typeof window !== "undefined") {
+      window.location.href = "/";
+    }
+  };
 
-  return <AuthContext.Provider value={{ user, isLoading, signIn, signUp, signOut }}>{children}</AuthContext.Provider>
+  return (
+    <AuthContext.Provider
+      value={{ user, isLoading, error, signIn, signUp, signOut }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext)
+  const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider")
+    throw new Error("useAuth must be used within an AuthProvider");
   }
-  return context
+  return context;
 }

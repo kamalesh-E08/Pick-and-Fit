@@ -2,9 +2,10 @@
 
 import type React from "react";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   Heart,
   ShoppingBag,
@@ -12,14 +13,23 @@ import {
   Truck,
   ArrowRight,
   ZoomIn,
+  Camera,
+  Leaf,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/use-toast";
 import { useCart } from "@/context/cart-context";
+import { useWishlist } from "@/context/wishlist-context";
+import { emitEvent } from "@/lib/client-events";
 import type { Product } from "@/lib/product-data";
 import "../../../app/product-zoom.css";
+import VisualRecommendations from "./visual-recommendations";
+import { SizeRecommendation } from "@/components/size-recommendation";
+import { SustainabilityScore } from "@/components/sustainability-score";
+import { VirtualTryOn } from "@/components/virtual-try-on";
+import { calculateSustainabilityScore } from "@/lib/style-sense-ai";
 
 interface ProductDetailClientProps {
   product: Product;
@@ -31,14 +41,38 @@ export default function ProductDetailClient({
   relatedProducts,
 }: ProductDetailClientProps) {
   const { addItem } = useCart();
+  const { toggleItem, hasItem } = useWishlist();
+  const searchParams = useSearchParams();
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [isZoomed, setIsZoomed] = useState(false);
   const [zoomPosition, setZoomPosition] = useState({ x: 0, y: 0 });
   const [showZoomModal, setShowZoomModal] = useState(false);
+  const [tryOnImage, setTryOnImage] = useState<string | null>(null);
+  const [matchScore, setMatchScore] = useState<number | null>(null);
+  const [sustainabilityScore, setSustainabilityScore] = useState({
+    score: 0,
+    materials: [],
+    isEcoFriendly: false,
+  });
   const imageRef = useRef<HTMLDivElement>(null);
   const zoomImageRef = useRef<HTMLImageElement>(null);
+
+  useEffect(() => {
+    const tryOnImageParam = searchParams.get("tryOnImage");
+    const matchScoreParam = searchParams.get("matchScore");
+    if (tryOnImageParam) {
+      setTryOnImage(decodeURIComponent(tryOnImageParam));
+    }
+    if (matchScoreParam) {
+      setMatchScore(parseInt(matchScoreParam));
+    }
+
+    // Calculate sustainability score
+    const sustainScore = calculateSustainabilityScore(product);
+    setSustainabilityScore(sustainScore);
+  }, [searchParams, product]);
 
   const handleSizeSelect = (size: string) => {
     setSelectedSize(size);
@@ -174,11 +208,52 @@ export default function ProductDetailClient({
               <ZoomIn className="h-5 w-5" />
             </div>
           </div>
+
+          {/* Try-On Image Preview */}
+          {tryOnImage && (
+            <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="flex items-center gap-2 mb-2">
+                <Camera className="h-4 w-4 text-blue-600" />
+                <p className="text-sm font-semibold text-blue-900">
+                  Your Try-On Photo
+                </p>
+                {matchScore && (
+                  <span
+                    className={`ml-auto text-xs font-bold px-2 py-1 rounded ${
+                      matchScore >= 70
+                        ? "bg-green-100 text-green-800"
+                        : matchScore >= 50
+                          ? "bg-yellow-100 text-yellow-800"
+                          : "bg-orange-100 text-orange-800"
+                    }`}
+                  >
+                    {matchScore}% Match
+                  </span>
+                )}
+              </div>
+              <img
+                src={tryOnImage}
+                alt="Your try-on photo"
+                className="w-full h-40 object-cover rounded-md mb-2"
+              />
+              <p className="text-xs text-gray-600">
+                See how this product looks with your photo
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Product Details */}
         <div>
-          <h1 className="text-2xl font-bold mb-2">{product.name}</h1>
+          <div className="flex items-center justify-between mb-2">
+            <h1 className="text-2xl font-bold">{product.name}</h1>
+            {sustainabilityScore.isEcoFriendly && (
+              <Badge className="bg-green-600 gap-1">
+                <Leaf className="h-3 w-3" />
+                {sustainabilityScore.score}% Eco
+              </Badge>
+            )}
+          </div>
           <div className="flex items-center gap-2 mb-3">
             <div className="flex">
               {[...Array(5)].map((_, i) => (
@@ -259,6 +334,26 @@ export default function ProductDetailClient({
             </div>
           )}
 
+          {/* Size Recommendation Widget */}
+          {product.sizes && product.sizes.length > 0 && (
+            <div className="mb-6">
+              <SizeRecommendation productId={product.id} />
+            </div>
+          )}
+
+          {/* Sustainability Score */}
+          <div className="mb-6">
+            <SustainabilityScore productId={product.id} />
+          </div>
+
+          {/* Virtual Try-On */}
+          <div className="mb-6">
+            <VirtualTryOn
+              productImage={product.image || "/placeholder.svg"}
+              productName={product.name}
+            />
+          </div>
+
           {/* Color Selection */}
           {product.colors && product.colors.length > 0 && (
             <div className="mb-4">
@@ -317,6 +412,7 @@ export default function ProductDetailClient({
                   selectedSize: selectedSize ?? null,
                   originalPrice: product.originalPrice,
                 });
+                emitEvent("add_to_cart", { productId: product.id, quantity });
                 toast({
                   title: "Added to cart",
                   description: `${product.name} added to cart.`,
@@ -327,18 +423,40 @@ export default function ProductDetailClient({
               Add to Cart
             </Button>
             <Button
-              variant="outline"
+              variant={hasItem(product.id) ? "secondary" : "outline"}
               className="flex-1 gap-2"
               onClick={() => {
+                const currentlySaved = hasItem(product.id);
+                toggleItem({
+                  id: product.id,
+                  name: product.name,
+                  price: product.price,
+                  image: product.image,
+                });
+                emitEvent(
+                  currentlySaved ? "remove_from_wishlist" : "add_to_wishlist",
+                  { productId: product.id },
+                );
                 toast({
-                  title: "Added to wishlist",
-                  description: `${product.name} saved to wishlist.`,
+                  title: currentlySaved
+                    ? "Removed from wishlist"
+                    : "Added to wishlist",
+                  description: `${product.name} ${currentlySaved ? "removed" : "saved"}.`,
                 });
               }}
             >
               <Heart className="h-5 w-5" />
-              Add to Wishlist
+              {hasItem(product.id) ? "Saved" : "Add to Wishlist"}
             </Button>
+            <Link
+              href={`/virtual-try-on?product=${product.id}`}
+              className="flex-1"
+            >
+              <Button variant="outline" className="w-full gap-2">
+                <Camera className="h-5 w-5" />
+                Try On Now
+              </Button>
+            </Link>
           </div>
 
           {/* Tags */}
@@ -473,6 +591,9 @@ export default function ProductDetailClient({
           </div>
         </div>
       )}
+
+      {/* Visual Recommendations */}
+      <VisualRecommendations productId={product.id} />
 
       {/* Zoom Modal */}
       {showZoomModal && (

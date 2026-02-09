@@ -3,7 +3,16 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Search, ShoppingBag, Menu, Heart, MapPin, LogOut } from "lucide-react";
+import {
+  Search,
+  ShoppingBag,
+  Menu,
+  Heart,
+  MapPin,
+  LogOut,
+  Camera,
+  MessageCircle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -14,6 +23,7 @@ import MobileCategoryMenu from "@/components/mobile-category-menu";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/context/auth-context";
 import { useCart } from "@/context/cart-context";
+import { useWishlist } from "@/context/wishlist-context";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -399,6 +409,7 @@ const categories = [
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const { cartCount } = useCart();
+  const { wishlistCount } = useWishlist();
   const { user, signOut } = useAuth();
 
   // Add scroll effect
@@ -482,17 +493,45 @@ export default function Header() {
           {/* User Actions */}
           <div className="flex items-center gap-5">
             <div className="hidden md:flex items-center gap-5">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="relative group h-9 px-2"
-              >
-                <Heart className="h-[18px] w-[18px] group-hover:text-red-500 transition-colors" />
-                <span className="sr-only">Wishlist</span>
-                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
-                  2
-                </span>
-              </Button>
+              <Link href="/wishlist" className="relative">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="relative group h-9 px-2"
+                >
+                  <Heart className="h-[18px] w-[18px] group-hover:text-red-500 transition-colors" />
+                  <span className="sr-only">Wishlist</span>
+                  {wishlistCount > 0 && (
+                    <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+                      {wishlistCount}
+                    </span>
+                  )}
+                </Button>
+              </Link>
+
+              <Link href="/virtual-try-on" className="relative">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="relative group h-9 px-2"
+                  title="Try products virtually with camera"
+                >
+                  <Camera className="h-[18px] w-[18px] group-hover:text-blue-500 transition-colors" />
+                  <span className="sr-only">Virtual Try-On</span>
+                </Button>
+              </Link>
+
+              <Link href="/ai-assistant" className="relative">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="relative group h-9 px-2"
+                  title="Personal AI Shopping Assistant"
+                >
+                  <MessageCircle className="h-[18px] w-[18px] group-hover:text-purple-500 transition-colors" />
+                  <span className="sr-only">AI Assistant</span>
+                </Button>
+              </Link>
 
               <Link href="/cart" className="relative">
                 <Button
@@ -534,6 +573,12 @@ export default function Header() {
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link href="/wishlist">Wishlist</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/virtual-try-on">Virtual Try-On</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/payment-methods">Payment Methods</Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
@@ -630,17 +675,31 @@ export default function Header() {
                     />
                     <div className="mt-auto border-t py-4">
                       <div className="flex items-center justify-around">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="relative"
-                        >
-                          <Heart className="h-5 w-5" />
-                          <span className="sr-only">Wishlist</span>
-                          <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
-                            2
-                          </span>
-                        </Button>
+                        <Link href="/wishlist" className="relative">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="relative"
+                          >
+                            <Heart className="h-5 w-5" />
+                            <span className="sr-only">Wishlist</span>
+                            {wishlistCount > 0 && (
+                              <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+                                {wishlistCount}
+                              </span>
+                            )}
+                          </Button>
+                        </Link>
+                        <Link href="/ai-assistant">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            title="AI Assistant"
+                          >
+                            <MessageCircle className="h-5 w-5" />
+                            <span className="sr-only">AI Assistant</span>
+                          </Button>
+                        </Link>
                         <ThemeToggle />
                         {user && (
                           <Button variant="ghost" size="icon" onClick={signOut}>

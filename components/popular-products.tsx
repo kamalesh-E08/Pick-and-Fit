@@ -2,8 +2,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ShoppingBag } from "lucide-react";
+import { ShoppingBag, Heart } from "lucide-react";
 import { useCart } from "@/context/cart-context";
+import { useWishlist } from "@/context/wishlist-context";
 import { toast } from "@/components/ui/use-toast";
 
 const products = [
@@ -53,7 +54,7 @@ const products = [
 
 export default function PopularProducts() {
   const { addItem } = useCart();
-
+  const { toggleItem, hasItem } = useWishlist();
   return (
     <section className="container px-4">
       <div className="flex flex-col gap-6">
@@ -97,6 +98,10 @@ export default function PopularProducts() {
                       image: product.image,
                       quantity: 1,
                     });
+                    emitEvent("add_to_cart", {
+                      productId: String(product.id),
+                      quantity: 1,
+                    });
                     toast({
                       title: "Added to cart",
                       description: `${product.name} added to cart.`,
@@ -106,8 +111,29 @@ export default function PopularProducts() {
                   <ShoppingBag className="mr-2 h-4 w-4" />
                   Add to Cart
                 </Button>
-                <Button variant="outline" className="w-full">
-                  Try at Home
+                <Button
+                  variant={
+                    hasItem(String(product.id)) ? "secondary" : "outline"
+                  }
+                  className="w-full"
+                  onClick={() => {
+                    const currentlySaved = hasItem(String(product.id));
+                    toggleItem({
+                      id: String(product.id),
+                      name: product.name,
+                      price: product.price,
+                      image: product.image,
+                    });
+                    toast({
+                      title: currentlySaved
+                        ? "Removed from wishlist"
+                        : "Added to wishlist",
+                      description: `${product.name} ${currentlySaved ? "removed" : "saved"}.`,
+                    });
+                  }}
+                >
+                  <Heart className="mr-2 h-4 w-4" />
+                  {hasItem(String(product.id)) ? "Saved" : "Wishlist"}
                 </Button>
               </CardFooter>
             </Card>

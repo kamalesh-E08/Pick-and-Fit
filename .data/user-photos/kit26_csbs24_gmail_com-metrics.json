@@ -1,0 +1,19 @@
+{
+  "email": "kit26.csbs24@gmail.com",
+  "timestamp": "2026-02-05T08:12:41.440Z",
+  "detectedFace": true,
+  "detectedBody": true,
+  "estimatedHeight": "Medium (160-175cm)",
+  "estimatedBodyType": "athletic",
+  "skinTone": "Medium",
+  "poseDetected": true,
+  "estimatedWaistSize": "S-M",
+  "estimatedBustSize": "34-36",
+  "confidence": 0.91,
+  "recommendations": [
+    "Emphasize your fit physique with tailored cuts",
+    "Avoid oversized silhouettes",
+    "Monochrome looks enhance your lines",
+    "Try sports-inspired pieces"
+  ]
+}

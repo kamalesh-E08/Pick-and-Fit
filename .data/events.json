@@ -1,0 +1,25 @@
+[
+  {
+    "type": "add_to_cart",
+    "payload": {
+      "productId": "1",
+      "quantity": 1
+    },
+    "timestamp": "2026-02-05T05:28:20.050Z"
+  },
+  {
+    "type": "add_to_wishlist",
+    "payload": {
+      "productId": "1"
+    },
+    "timestamp": "2026-02-05T05:28:20.062Z"
+  },
+  {
+    "type": "add_to_cart",
+    "payload": {
+      "productId": "5",
+      "quantity": 1
+    },
+    "timestamp": "2026-02-05T05:49:30.704Z"
+  }
+]

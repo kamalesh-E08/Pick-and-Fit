@@ -93,6 +93,9 @@ export default function CartPage() {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <Link href="/payment-methods">
+                <Button variant="outline">Add Payment Method</Button>
+              </Link>
               <Button variant="outline" onClick={() => clearCart()}>
                 Clear Cart
               </Button>

@@ -1,9 +1,9 @@
-import HeroSection from "@/components/hero-section"
-import FlashDeals from "@/components/flash-deals"
-import FeaturedCategories from "@/components/featured-categories"
-import TryAtHomeFeature from "@/components/try-at-home-feature"
-import Testimonials from "@/components/testimonials"
-
+import HeroSection from "@/components/hero-section";
+import FlashDeals from "@/components/flash-deals";
+import FeaturedCategories from "@/components/featured-categories";
+import TryAtHomeFeature from "@/components/try-at-home-feature";
+import Testimonials from "@/components/testimonials";
+import HomeRecommendations from "@/components/home-recommendations";
 export default function Home() {
   return (
     <div className="flex flex-col">
@@ -13,7 +13,9 @@ export default function Home() {
         <FeaturedCategories />
         <TryAtHomeFeature />
         <Testimonials />
+        {/* ML-based recommendations */}
+        <HomeRecommendations />
       </div>
     </div>
-  )
+  );
 }

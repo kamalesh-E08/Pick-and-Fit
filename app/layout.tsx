@@ -9,7 +9,9 @@ import Footer from "@/components/footer";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/context/auth-context";
 import { CartProvider } from "@/context/cart-context";
-
+import { WishlistProvider } from "@/context/wishlist-context";
+import { BodyMetricsProvider } from "@/context/body-metrics-context";
+import { AIProvider } from "@/context/ai-context";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
@@ -32,13 +34,21 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <CartProvider>
-            <AuthProvider>
-              <Header />
-              <main className="min-h-screen flex flex-col">{children}</main>
-              <Footer />
-            </AuthProvider>
-          </CartProvider>
+          <AuthProvider>
+            <CartProvider>
+              <WishlistProvider>
+                <BodyMetricsProvider>
+                  <AIProvider>
+                    <Header />
+                    <main className="min-h-screen flex flex-col">
+                      {children}
+                    </main>
+                    <Footer />
+                  </AIProvider>
+                </BodyMetricsProvider>
+              </WishlistProvider>
+            </CartProvider>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>
