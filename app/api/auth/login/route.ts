@@ -2,10 +2,19 @@ import { connect } from "@/lib/db/connection";
 import User from "@/lib/db/models/User";
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
+import { generateTokenPair } from "@/lib/auth/jwt";
 
 export async function POST(req: NextRequest) {
   try {
-    await connect();
+    try {
+      await connect();
+    } catch (connErr) {
+      console.error("Login error - MongoDB unavailable:", connErr);
+      return NextResponse.json(
+        { error: "Database service unavailable. Please try again later." },
+        { status: 503 },
+      );
+    }
 
     const { email, password } = await req.json();
 
@@ -35,6 +44,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Generate JWT tokens
+    const tokens = generateTokenPair({
+      userId: user._id.toString(),
+      email: user.email,
+      role: user.role || "customer",
+    });
+
     return NextResponse.json(
       {
         message: "Login successful",
@@ -42,7 +58,9 @@ export async function POST(req: NextRequest) {
           id: user._id,
           name: user.name,
           email: user.email,
+          role: user.role || "customer",
         },
+        tokens,
       },
       { status: 200 },
     );

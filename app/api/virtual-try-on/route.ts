@@ -5,7 +5,26 @@ import { NextRequest, NextResponse } from "next/server";
 // GET /api/virtual-try-on - List user's try-on history
 export async function GET(req: NextRequest) {
   try {
-    await connect();
+    try {
+      await connect();
+    } catch (connErr) {
+      console.error(
+        "MongoDB connect failed (falling back to empty try-ons):",
+        connErr,
+      );
+      const userEmail = req.nextUrl.searchParams.get("email");
+      if (!userEmail) {
+        return NextResponse.json(
+          { error: "Email parameter required" },
+          { status: 400 },
+        );
+      }
+      return NextResponse.json({
+        tryOns: [],
+        pagination: { total: 0, limit: 10, skip: 0, hasMore: false },
+        warning: "MongoDB unavailable",
+      });
+    }
 
     const userEmail = req.nextUrl.searchParams.get("email");
     const limit = parseInt(req.nextUrl.searchParams.get("limit") || "10");
@@ -45,7 +64,15 @@ export async function GET(req: NextRequest) {
 // POST /api/virtual-try-on - Create new try-on session
 export async function POST(req: NextRequest) {
   try {
-    await connect();
+    try {
+      await connect();
+    } catch (connErr) {
+      console.error("POST try-on error - MongoDB unavailable:", connErr);
+      return NextResponse.json(
+        { error: "Database service unavailable" },
+        { status: 503 },
+      );
+    }
 
     const {
       userId,
@@ -121,7 +148,15 @@ export async function POST(req: NextRequest) {
 // PUT /api/virtual-try-on - Update try-on session
 export async function PUT(req: NextRequest) {
   try {
-    await connect();
+    try {
+      await connect();
+    } catch (connErr) {
+      console.error("PUT try-on error - MongoDB unavailable:", connErr);
+      return NextResponse.json(
+        { error: "Database service unavailable" },
+        { status: 503 },
+      );
+    }
 
     const { tryOnId, tryOnImageUrl, matchScore, feedback } = await req.json();
 

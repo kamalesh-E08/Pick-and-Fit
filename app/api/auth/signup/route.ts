@@ -2,18 +2,39 @@ import { connect } from "@/lib/db/connection";
 import User from "@/lib/db/models/User";
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
+import { generateTokenPair } from "@/lib/auth/jwt";
 
 export async function POST(req: NextRequest) {
   try {
-    await connect();
+    try {
+      await connect();
+    } catch (connErr) {
+      console.error("Signup error - MongoDB unavailable:", connErr);
+      return NextResponse.json(
+        { error: "Database service unavailable. Please try again later." },
+        { status: 503 },
+      );
+    }
 
-    const { name, email, password } = await req.json();
+    const { name, email, password, role } = await req.json();
 
     // Validation
     if (!name || !email || !password) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 },
+      );
+    }
+
+    // Validate role
+    const validRoles = ["customer", "seller", "admin", "delivery"];
+    const userRole = role && validRoles.includes(role) ? role : "customer";
+
+    // Prevent unauthorized admin creation
+    if (userRole === "admin" && !email.endsWith("@pickandfit.com")) {
+      return NextResponse.json(
+        { error: "Admin accounts can only be created with company email" },
+        { status: 403 },
       );
     }
 
@@ -34,10 +55,18 @@ export async function POST(req: NextRequest) {
       name,
       email,
       password: hashedPassword,
+      role: userRole,
       createdAt: new Date(),
     });
 
     await user.save();
+
+    // Generate JWT tokens
+    const tokens = generateTokenPair({
+      userId: user._id.toString(),
+      email: user.email,
+      role: user.role || "customer",
+    });
 
     return NextResponse.json(
       {
@@ -46,7 +75,9 @@ export async function POST(req: NextRequest) {
           id: user._id,
           name: user.name,
           email: user.email,
+          role: user.role || "customer",
         },
+        tokens,
       },
       { status: 201 },
     );

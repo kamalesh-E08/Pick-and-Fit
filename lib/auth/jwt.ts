@@ -8,7 +8,7 @@ import jwt, { SignOptions, VerifyOptions } from "jsonwebtoken";
 export interface JWTPayload {
   userId: string;
   email: string;
-  role: "user" | "admin" | "seller";
+  role: "customer" | "admin" | "seller" | "delivery";
   iat?: number;
   exp?: number;
 }

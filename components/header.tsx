@@ -565,6 +565,29 @@ export default function Header() {
                   <DropdownMenuContent align="end">
                     <DropdownMenuLabel>My Account</DropdownMenuLabel>
                     <DropdownMenuSeparator />
+                    {user?.role === "admin" && (
+                      <DropdownMenuItem asChild>
+                        <Link
+                          href="/admin"
+                          className="font-semibold text-blue-600"
+                        >
+                          Admin Dashboard
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
+                    {user?.role === "seller" && (
+                      <DropdownMenuItem asChild>
+                        <Link
+                          href="/seller"
+                          className="font-semibold text-green-600"
+                        >
+                          Seller Dashboard
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
+                    {(user?.role === "admin" || user?.role === "seller") && (
+                      <DropdownMenuSeparator />
+                    )}
                     <DropdownMenuItem asChild>
                       <Link href="/profile">Profile</Link>
                     </DropdownMenuItem>
@@ -652,16 +675,39 @@ export default function Header() {
                           </Button>
                         </div>
                       ) : (
-                        <div className="flex items-center gap-4 mt-4">
-                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                            {getUserInitials()}
+                        <div>
+                          <div className="flex items-center gap-4 mt-4">
+                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                              {getUserInitials()}
+                            </div>
+                            <div>
+                              <p className="font-medium">{user.name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {user.email}
+                              </p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="font-medium">{user.name}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {user.email}
-                            </p>
-                          </div>
+                          {(user.role === "admin" ||
+                            user.role === "seller") && (
+                            <div className="mt-4 space-y-2">
+                              {user.role === "admin" && (
+                                <Button
+                                  asChild
+                                  className="w-full bg-blue-600 hover:bg-blue-700"
+                                >
+                                  <Link href="/admin">Admin Dashboard</Link>
+                                </Button>
+                              )}
+                              {user.role === "seller" && (
+                                <Button
+                                  asChild
+                                  className="w-full bg-green-600 hover:bg-green-700"
+                                >
+                                  <Link href="/seller">Seller Dashboard</Link>
+                                </Button>
+                              )}
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>

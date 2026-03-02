@@ -5,6 +5,7 @@ export interface IShipment extends Document {
   orderId: Types.ObjectId;
   orderNumber: string;
   trackingNumber: string;
+  deliveryPartnerId?: Types.ObjectId; // Delivery partner assigned
   carrier: "fedex" | "ups" | "dhl" | "aramex" | "local";
   status:
     | "pending"
@@ -51,6 +52,11 @@ const ShipmentSchema = new Schema<IShipment>(
     },
     orderNumber: { type: String, required: true, index: true },
     trackingNumber: { type: String, required: true, unique: true, index: true },
+    deliveryPartnerId: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      index: true,
+    },
     carrier: {
       type: String,
       enum: ["fedex", "ups", "dhl", "aramex", "local"],

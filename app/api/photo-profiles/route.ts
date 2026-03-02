@@ -5,7 +5,27 @@ import PhotoProfile from "@/lib/db/models/PhotoProfile";
 // GET - List all photo profiles for user
 export async function GET(request: NextRequest) {
   try {
-    await connect();
+    try {
+      await connect();
+    } catch (connErr) {
+      // Log connection errors but allow reads to return an empty list
+      console.error(
+        "MongoDB connect failed (falling back to empty profiles):",
+        connErr,
+      );
+      const { searchParams } = new URL(request.url);
+      const email = searchParams.get("email");
+      if (!email) {
+        return NextResponse.json(
+          { error: "Email is required" },
+          { status: 400 },
+        );
+      }
+      return NextResponse.json({
+        profiles: [],
+        warning: "MongoDB unavailable",
+      });
+    }
 
     const { searchParams } = new URL(request.url);
     const email = searchParams.get("email");
@@ -31,7 +51,15 @@ export async function GET(request: NextRequest) {
 // POST - Create new photo profile
 export async function POST(request: NextRequest) {
   try {
-    await connect();
+    try {
+      await connect();
+    } catch (connErr) {
+      console.error("POST photo profile error - MongoDB unavailable:", connErr);
+      return NextResponse.json(
+        { error: "MongoDB unavailable" },
+        { status: 503 },
+      );
+    }
 
     const body = await request.json();
     const { userId, userEmail, personName, photoUrl, description } = body;
@@ -67,7 +95,18 @@ export async function POST(request: NextRequest) {
 // DELETE - Delete photo profile
 export async function DELETE(request: NextRequest) {
   try {
-    await connect();
+    try {
+      await connect();
+    } catch (connErr) {
+      console.error(
+        "DELETE photo profile error - MongoDB unavailable:",
+        connErr,
+      );
+      return NextResponse.json(
+        { error: "MongoDB unavailable" },
+        { status: 503 },
+      );
+    }
 
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");

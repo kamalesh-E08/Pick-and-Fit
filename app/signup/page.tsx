@@ -25,6 +25,7 @@ export default function SignUpPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [role, setRole] = useState("customer");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
@@ -155,11 +156,41 @@ export default function SignUpPage() {
     setIsLoading(true);
 
     try {
-      const success = await signUp(name, email, password);
-      if (success) {
-        router.push("/");
+      const response = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password, role }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        setError(data.error || "Failed to create account");
+        setIsLoading(false);
+        return;
+      }
+
+      const data = await response.json();
+      const userData = data.user;
+      const tokens = data.tokens;
+
+      // Store user data and tokens
+      localStorage.setItem("pickfit_user", JSON.stringify(userData));
+      if (tokens?.accessToken) {
+        localStorage.setItem("accessToken", tokens.accessToken);
+      }
+      if (tokens?.refreshToken) {
+        localStorage.setItem("refreshToken", tokens.refreshToken);
+      }
+
+      // Redirect based on role
+      if (userData.role === "admin") {
+        router.push("/admin");
+      } else if (userData.role === "seller") {
+        router.push("/seller");
+      } else if (userData.role === "delivery") {
+        router.push("/delivery");
       } else {
-        setError("Failed to create account. Please try again.");
+        router.push("/");
       }
     } catch (err) {
       setError("An error occurred. Please try again.");
@@ -206,6 +237,29 @@ export default function SignUpPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="role">Account Type</Label>
+              <select
+                id="role"
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                required
+              >
+                <option value="customer">Customer - Shop & Try On</option>
+                <option value="seller">Seller - Sell Products</option>
+                <option value="delivery">
+                  Delivery Partner - Deliver Orders
+                </option>
+              </select>
+              <p className="text-xs text-gray-500 mt-1">
+                {role === "customer" &&
+                  "Browse products, virtual try-on, and shop"}
+                {role === "seller" &&
+                  "List products, manage inventory & orders"}
+                {role === "delivery" && "Deliver orders and track shipments"}
+              </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>

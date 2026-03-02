@@ -36,7 +36,7 @@ export interface IUser extends Document {
   name: string;
   email: string;
   password: string;
-  role: "customer" | "admin" | "seller";
+  role: "customer" | "admin" | "seller" | "delivery";
   photoId?: string; // Reference to stored photo
   bodyMetrics?: IBodyMetrics;
   addresses: IAddress[];
@@ -100,7 +100,7 @@ const UserSchema = new Schema<IUser>(
     password: { type: String, required: true },
     role: {
       type: String,
-      enum: ["customer", "admin", "seller"],
+      enum: ["customer", "admin", "seller", "delivery"],
       default: "customer",
       index: true,
     },
@@ -127,8 +127,6 @@ const UserSchema = new Schema<IUser>(
 );
 
 // Indexes for better query performance
-UserSchema.index({ email: 1 });
-UserSchema.index({ role: 1 });
 UserSchema.index({ createdAt: -1 });
 
 // Check if model exists to prevent recompilation in hot reload
