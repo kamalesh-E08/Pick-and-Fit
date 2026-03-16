@@ -6,8 +6,11 @@ import {
   beautyProducts,
 } from "@/lib/product-data";
 import { notFound } from "next/navigation";
+import { connectDB } from "@/lib/db/connection";
+import Product from "@/lib/db/models/Product";
+import mongoose from "mongoose";
 
-function getProduct(id: string) {
+async function getProduct(id: string) {
   // First try to find the product in the main products array
   const product = getProductById(id);
 
@@ -37,19 +40,56 @@ function getProduct(id: string) {
       };
     }
 
+    try {
+      await connectDB();
+
+      const dbQuery: any[] = [{ productId: id }];
+      if (mongoose.Types.ObjectId.isValid(id)) {
+        dbQuery.push({ _id: new mongoose.Types.ObjectId(id) });
+      }
+
+      const dbProduct: any = await Product.findOne({ $or: dbQuery }).lean();
+
+      if (dbProduct) {
+        return {
+          id: String(dbProduct.productId || dbProduct._id),
+          name: dbProduct.name,
+          price: dbProduct.price,
+          originalPrice: dbProduct.originalPrice || dbProduct.price,
+          image: dbProduct.mainImage || dbProduct.images?.[0],
+          category: dbProduct.category,
+          subcategory: dbProduct.subcategory,
+          gender: dbProduct.gender,
+          rating: dbProduct.rating || 4,
+          reviewCount: dbProduct.reviewCount || 0,
+          tags: dbProduct.tags || [],
+          shortDescription: dbProduct.shortDescription || dbProduct.description,
+          description: dbProduct.description,
+          sizes: dbProduct.sizes || [],
+          colors: dbProduct.colors || [],
+          material: dbProduct.material,
+          brand: dbProduct.brand,
+          features: dbProduct.features || [],
+          careInstructions: dbProduct.careInstructions || [],
+        };
+      }
+    } catch (error) {
+      console.error("Error loading DB product detail:", error);
+    }
+
     return { id: "not-found" };
   }
 
   return product;
 }
 
-export default function ProductDetailPage({
+export default async function ProductDetailPage({
   params,
 }: {
   params: { id: string };
 }) {
   // Get the product data
-  const product = getProduct(params.id);
+  const product = await getProduct(params.id);
 
   // If product is not found, show 404 page
   if (product.id === "not-found") {

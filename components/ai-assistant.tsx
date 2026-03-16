@@ -5,16 +5,14 @@ import { useAI } from "@/context/ai-context";
 import { VoiceInput } from "./voice-input";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
 import {
   Loader,
   Send,
   Trash2,
   MessageCircle,
   Lightbulb,
-  ShoppingBag,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -23,6 +21,78 @@ interface AIAssistantProps {
   compact?: boolean;
   showVoiceInput?: boolean;
   onProductSelect?: (productName: string) => void;
+}
+
+function renderAssistantContent(content: string) {
+  const normalized = content
+    .replace(/\r\n/g, "\n")
+    .replace(/\s+(\d+\.\s)/g, "\n$1")
+    .replace(/\s+(-\s)/g, "\n$1")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+
+  const blocks = normalized
+    .split(/\n\n+/)
+    .map((block) => block.trim())
+    .filter(Boolean);
+
+  return (
+    <div className="space-y-3 text-sm leading-relaxed">
+      {blocks.map((block, blockIndex) => {
+        const numberedLines = block
+          .split("\n")
+          .filter(Boolean)
+          .filter((line) => /^\d+\.\s+/.test(line.trim()));
+
+        const bulletLines = block
+          .split("\n")
+          .filter(Boolean)
+          .filter((line) => /^[-•]\s+/.test(line.trim()));
+
+        if (
+          numberedLines.length > 1 &&
+          numberedLines.length === block.split("\n").filter(Boolean).length
+        ) {
+          return (
+            <ol
+              key={`ol-${blockIndex}`}
+              className="list-decimal pl-5 space-y-1.5"
+            >
+              {numberedLines.map((line, index) => (
+                <li key={`ol-${blockIndex}-${index}`}>
+                  {line.replace(/^\d+\.\s+/, "").trim()}
+                </li>
+              ))}
+            </ol>
+          );
+        }
+
+        if (
+          bulletLines.length > 1 &&
+          bulletLines.length === block.split("\n").filter(Boolean).length
+        ) {
+          return (
+            <ul key={`ul-${blockIndex}`} className="list-disc pl-5 space-y-1.5">
+              {bulletLines.map((line, index) => (
+                <li key={`ul-${blockIndex}-${index}`}>
+                  {line.replace(/^[-•]\s+/, "").trim()}
+                </li>
+              ))}
+            </ul>
+          );
+        }
+
+        return (
+          <p
+            key={`p-${blockIndex}`}
+            className="whitespace-pre-wrap break-words"
+          >
+            {block}
+          </p>
+        );
+      })}
+    </div>
+  );
 }
 
 export const AIAssistant: React.FC<AIAssistantProps> = ({
@@ -85,8 +155,10 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
     return (
       <div className="flex items-center justify-center p-6">
         <div className="text-center">
-          <Loader className="w-8 h-8 animate-spin mx-auto mb-2 text-blue-600" />
-          <p className="text-sm text-gray-600">Initializing AI Assistant...</p>
+          <Loader className="w-8 h-8 animate-spin mx-auto mb-2 text-primary" />
+          <p className="text-sm text-muted-foreground">
+            Initializing AI Assistant...
+          </p>
         </div>
       </div>
     );
@@ -97,15 +169,22 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <MessageCircle className="w-5 h-5 text-blue-600" />
-          <h3 className="font-semibold text-lg">Personal AI Assistant</h3>
+          <div className="p-1.5 rounded-md bg-primary/10 border border-primary/20">
+            <MessageCircle className="w-4 h-4 text-primary" />
+          </div>
+          <h3 className="font-semibold text-lg text-foreground">
+            Personal AI Assistant
+          </h3>
+          <span className="text-xs px-2 py-0.5 rounded-full border border-border bg-muted text-muted-foreground inline-flex items-center gap-1">
+            <Sparkles className="w-3 h-3" /> AI Live
+          </span>
         </div>
         {messages.length > 0 && (
           <Button
             onClick={handleClearHistory}
             variant="ghost"
             size="sm"
-            className="text-gray-600 hover:text-red-600"
+            className="text-muted-foreground hover:text-destructive"
           >
             <Trash2 className="w-4 h-4" />
           </Button>
@@ -115,7 +194,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
       {/* Messages Area */}
       <div
         className={cn(
-          "border rounded-lg bg-gray-50",
+          "border border-border rounded-xl bg-muted/30 shadow-inner",
           compact ? "flex-1 overflow-hidden" : "h-96",
         )}
       >
@@ -123,12 +202,14 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
           <div className="space-y-4" ref={scrollRef}>
             {messages.length === 0 ? (
               <div className="space-y-4 text-center py-8">
-                <Lightbulb className="w-12 h-12 mx-auto text-yellow-500" />
+                <div className="mx-auto w-14 h-14 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center">
+                  <Lightbulb className="w-7 h-7 text-primary" />
+                </div>
                 <div>
-                  <p className="font-semibold text-gray-700 mb-2">
+                  <p className="font-semibold text-foreground mb-2">
                     No messages yet
                   </p>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-muted-foreground">
                     Try asking about products, sizing, or style tips!
                   </p>
                 </div>
@@ -144,20 +225,26 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                 >
                   <div
                     className={cn(
-                      "max-w-xs px-4 py-2 rounded-lg",
+                      "max-w-xs sm:max-w-md px-4 py-2.5 rounded-2xl shadow-sm",
                       msg.role === "user"
-                        ? "bg-blue-600 text-white rounded-br-none"
-                        : "bg-white border border-gray-200 text-gray-800 rounded-bl-none",
+                        ? "bg-primary text-primary-foreground rounded-br-md"
+                        : "bg-card border border-border text-card-foreground rounded-bl-md",
                     )}
                   >
-                    <p className="text-sm">{msg.content}</p>
+                    {msg.role === "user" ? (
+                      <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">
+                        {msg.content}
+                      </p>
+                    ) : (
+                      renderAssistantContent(msg.content)
+                    )}
                     {msg.timestamp && (
                       <p
                         className={cn(
-                          "text-xs mt-1",
+                          "text-xs mt-1 opacity-80",
                           msg.role === "user"
-                            ? "text-blue-100"
-                            : "text-gray-500",
+                            ? "text-primary-foreground"
+                            : "text-muted-foreground",
                         )}
                       >
                         {msg.timestamp.toLocaleTimeString([], {
@@ -173,18 +260,18 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
 
             {isLoading && (
               <div className="flex gap-3">
-                <div className="bg-white border border-gray-200 text-gray-800 rounded-lg rounded-bl-none px-4 py-2">
+                <div className="bg-card border border-border text-card-foreground rounded-2xl rounded-bl-md px-4 py-2.5 shadow-sm">
                   <div className="flex gap-2">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-100" />
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-200" />
+                    <div className="w-2 h-2 bg-primary/70 rounded-full animate-bounce" />
+                    <div className="w-2 h-2 bg-primary/70 rounded-full animate-bounce delay-100" />
+                    <div className="w-2 h-2 bg-primary/70 rounded-full animate-bounce delay-200" />
                   </div>
                 </div>
               </div>
             )}
 
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded-lg text-sm">
+              <div className="bg-destructive/10 border border-destructive/30 text-destructive px-4 py-2 rounded-lg text-sm">
                 {error}
               </div>
             )}
@@ -195,7 +282,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
       {/* Quick Prompts */}
       {messages.length === 0 && (
         <div className="space-y-2">
-          <p className="text-xs text-gray-600 font-semibold">
+          <p className="text-xs text-muted-foreground font-semibold">
             Suggested questions:
           </p>
           <div className="grid grid-cols-1 gap-2">
@@ -204,7 +291,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                 key={idx}
                 onClick={() => handleSendMessage(prompt)}
                 disabled={isLoading}
-                className="text-left p-2 text-sm rounded-lg border border-gray-200 hover:border-blue-400 hover:bg-blue-50 transition-colors disabled:opacity-50"
+                className="text-left p-2.5 text-sm rounded-lg border border-border bg-card hover:border-primary/40 hover:bg-primary/5 transition-colors disabled:opacity-50"
               >
                 {prompt}
               </button>
@@ -240,7 +327,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
         <Button
           onClick={() => handleSendMessage()}
           disabled={!input.trim() || isLoading || isListening || !isInitialized}
-          className="bg-blue-600 hover:bg-blue-700 text-white"
+          className="bg-primary hover:bg-primary/90 text-primary-foreground"
         >
           <Send className="w-4 h-4" />
         </Button>

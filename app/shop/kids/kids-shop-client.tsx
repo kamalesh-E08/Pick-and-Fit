@@ -1,15 +1,20 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import Link from "next/link"
-import Image from "next/image"
-import { ChevronDown, ChevronRight, Filter, Grid3X3, LayoutGrid } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Slider } from "@/components/ui/slider"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { getKidsProducts } from "@/lib/product-data"
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import {
+  ChevronDown,
+  ChevronRight,
+  Filter,
+  Grid3X3,
+  LayoutGrid,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Slider } from "@/components/ui/slider";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 // Mock product data (simplified version for kids' products)
 const mockProducts = [
@@ -113,27 +118,69 @@ const mockProducts = [
     gender: "kids",
     kidGender: "girl",
   },
-]
+];
 
 export default function KidsShopClient() {
-  // Get kids products from the product data
-  const initialProducts = getKidsProducts()
+  const [products, setProducts] = useState(mockProducts);
+  const [filteredProducts, setFilteredProducts] = useState(mockProducts);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(false);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedSubcategories, setSelectedSubcategories] = useState<
+    SelectedSubcategory[]
+  >([]);
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 2000]);
+  const [sortBy, setSortBy] = useState<string>("featured");
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
 
-  const [products, setProducts] = useState(initialProducts)
-  const [filteredProducts, setFilteredProducts] = useState(initialProducts)
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([])
-  const [selectedSubcategories, setSelectedSubcategories] = useState<SelectedSubcategory[]>([])
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 2000])
-  const [sortBy, setSortBy] = useState<string>("featured")
-  const [isFilterOpen, setIsFilterOpen] = useState(false)
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
-  const [expandedCategories, setExpandedCategories] = useState<string[]>([])
+  useEffect(() => {
+    const loadLiveProducts = async () => {
+      try {
+        setIsLoadingProducts(true);
+        const response = await fetch("/api/products?gender=kids&limit=120");
+        if (!response.ok) return;
+
+        const data = await response.json();
+        const liveProducts = Array.isArray(data?.products)
+          ? data.products.map((item: any) => {
+              const derivedKidGender =
+                item.category === "boy" || item.category === "girl"
+                  ? item.category
+                  : item.kidGender || "";
+
+              return {
+                id: String(item.productId || item._id),
+                name: item.name,
+                price: Number(item.price || 0),
+                image: item.mainImage || item.images?.[0] || "/placeholder.svg",
+                category: item.category || "",
+                subcategory: item.subcategory || "",
+                gender: item.gender || "kids",
+                kidGender: derivedKidGender,
+              };
+            })
+          : [];
+
+        if (liveProducts.length > 0) {
+          setProducts(liveProducts);
+          setFilteredProducts(liveProducts);
+        }
+      } catch (error) {
+        console.error("Failed to load kids products:", error);
+      } finally {
+        setIsLoadingProducts(false);
+      }
+    };
+
+    loadLiveProducts();
+  }, []);
 
   // Category structure for filters
   const categoryFilters = {
     boy: "Boy",
     girl: "Girl",
-  }
+  };
 
   // Subcategory mappings
   const subcategoryMappings = {
@@ -151,119 +198,137 @@ export default function KidsShopClient() {
       footwear: "Footwear",
       "festive-ethnic": "Festive & Ethnic Wear",
     },
-  }
+  };
 
   // Type for selected subcategory that includes parent category
   type SelectedSubcategory = {
-    category: string
-    subcategory: string
-  }
+    category: string;
+    subcategory: string;
+  };
 
   // Filter products based on selected criteria
   useEffect(() => {
-    let filtered = [...products]
+    let filtered = [...products];
 
     // Filter by gender (always kids for this page)
-    filtered = filtered.filter((product) => product.gender === "kids")
+    filtered = filtered.filter((product) => product.gender === "kids");
 
     // Apply category and subcategory filters
     if (selectedCategories.length > 0 || selectedSubcategories.length > 0) {
       filtered = filtered.filter((product) => {
         // Check if product's category is directly selected
-        const isCategorySelected = selectedCategories.includes(product.kidGender || "")
+        const isCategorySelected = selectedCategories.includes(
+          product.kidGender || "",
+        );
 
         // Check if any subcategory of this product's category is selected
-        const hasSelectedSubcategories = selectedSubcategories.some((item) => item.category === product.kidGender)
+        const hasSelectedSubcategories = selectedSubcategories.some(
+          (item) => item.category === product.kidGender,
+        );
 
         // If category is selected but no subcategories for it are selected, include all products from this category
         if (isCategorySelected && !hasSelectedSubcategories) {
-          return true
+          return true;
         }
 
         // If subcategories are selected for this category, check if product matches any of them
         if (hasSelectedSubcategories) {
           return selectedSubcategories.some(
-            (item) => item.category === product.kidGender && item.subcategory === product.subcategory,
-          )
+            (item) =>
+              item.category === product.kidGender &&
+              item.subcategory === product.subcategory,
+          );
         }
 
-        return false
-      })
+        return false;
+      });
     }
 
     // Filter by price range
-    filtered = filtered.filter((product) => product.price >= priceRange[0] && product.price <= priceRange[1])
+    filtered = filtered.filter(
+      (product) =>
+        product.price >= priceRange[0] && product.price <= priceRange[1],
+    );
 
     // Sort products
     if (sortBy === "price-low-high") {
-      filtered.sort((a, b) => a.price - b.price)
+      filtered.sort((a, b) => a.price - b.price);
     } else if (sortBy === "price-high-low") {
-      filtered.sort((a, b) => b.price - a.price)
+      filtered.sort((a, b) => b.price - a.price);
     } else if (sortBy === "newest") {
       // In a real app, you would sort by date
-      filtered.sort((a, b) => b.id.localeCompare(a.id))
+      filtered.sort((a, b) => String(b.id).localeCompare(String(a.id)));
     }
 
-    setFilteredProducts(filtered)
-  }, [products, selectedCategories, selectedSubcategories, priceRange, sortBy])
+    setFilteredProducts(filtered);
+  }, [products, selectedCategories, selectedSubcategories, priceRange, sortBy]);
 
   // Toggle category selection
   const toggleCategory = (category: string) => {
     // Toggle category selection
-    const isSelected = selectedCategories.includes(category)
+    const isSelected = selectedCategories.includes(category);
 
     if (isSelected) {
       // If deselecting, remove category and its subcategories
-      setSelectedCategories((prev) => prev.filter((c) => c !== category))
-      setSelectedSubcategories((prev) => prev.filter((item) => item.category !== category))
-      setExpandedCategories((prev) => prev.filter((c) => c !== category))
+      setSelectedCategories((prev) => prev.filter((c) => c !== category));
+      setSelectedSubcategories((prev) =>
+        prev.filter((item) => item.category !== category),
+      );
+      setExpandedCategories((prev) => prev.filter((c) => c !== category));
     } else {
       // If selecting, add category and expand it
-      setSelectedCategories((prev) => [...prev, category])
-      setExpandedCategories((prev) => [...prev, category])
+      setSelectedCategories((prev) => [...prev, category]);
+      setExpandedCategories((prev) => [...prev, category]);
     }
-  }
+  };
 
   // Toggle subcategory selection
   const toggleSubcategory = (category: string, subcategory: string) => {
-    const selectedItem = { category, subcategory }
-    const isSelected = isSubcategorySelected(category, subcategory)
+    const selectedItem = { category, subcategory };
+    const isSelected = isSubcategorySelected(category, subcategory);
 
     if (isSelected) {
       // Remove if already selected
       setSelectedSubcategories((prev) =>
-        prev.filter((item) => !(item.category === category && item.subcategory === subcategory)),
-      )
+        prev.filter(
+          (item) =>
+            !(item.category === category && item.subcategory === subcategory),
+        ),
+      );
     } else {
       // Add if not selected
-      setSelectedSubcategories((prev) => [...prev, selectedItem])
+      setSelectedSubcategories((prev) => [...prev, selectedItem]);
 
       // Also ensure the parent category is selected
       if (!selectedCategories.includes(category)) {
-        setSelectedCategories((prev) => [...prev, category])
+        setSelectedCategories((prev) => [...prev, category]);
       }
     }
-  }
+  };
 
   // Helper function to check if a subcategory is selected
   const isSubcategorySelected = (category: string, subcategory: string) => {
-    return selectedSubcategories.some((item) => item.category === category && item.subcategory === subcategory)
-  }
+    return selectedSubcategories.some(
+      (item) => item.category === category && item.subcategory === subcategory,
+    );
+  };
 
   // Toggle category expansion
   const toggleCategoryExpansion = (category: string) => {
     setExpandedCategories((prev) =>
-      prev.includes(category) ? prev.filter((c) => c !== category) : [...prev, category],
-    )
-  }
+      prev.includes(category)
+        ? prev.filter((c) => c !== category)
+        : [...prev, category],
+    );
+  };
 
   // Clear all filters
   const clearFilters = () => {
-    setSelectedCategories([])
-    setSelectedSubcategories([])
-    setPriceRange([0, 2000])
-    setExpandedCategories([])
-  }
+    setSelectedCategories([]);
+    setSelectedSubcategories([]);
+    setPriceRange([0, 2000]);
+    setExpandedCategories([]);
+  };
 
   return (
     <div className="container px-4 py-8">
@@ -271,13 +336,19 @@ export default function KidsShopClient() {
       <nav className="mb-6">
         <ol className="flex flex-wrap items-center text-sm">
           <li className="flex items-center">
-            <Link href="/" className="text-muted-foreground hover:text-foreground">
+            <Link
+              href="/"
+              className="text-muted-foreground hover:text-foreground"
+            >
               Home
             </Link>
           </li>
           <li className="flex items-center">
             <span className="mx-2 text-muted-foreground">/</span>
-            <Link href="/shop" className="text-muted-foreground hover:text-foreground">
+            <Link
+              href="/shop"
+              className="text-muted-foreground hover:text-foreground"
+            >
               Shop
             </Link>
           </li>
@@ -292,7 +363,9 @@ export default function KidsShopClient() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold">Kids' Collection</h1>
         <p className="mt-2 text-muted-foreground">
-          {filteredProducts.length} {filteredProducts.length === 1 ? "product" : "products"} available
+          {isLoadingProducts
+            ? "Loading products..."
+            : `${filteredProducts.length} ${filteredProducts.length === 1 ? "product" : "products"} available`}
         </p>
       </div>
 
@@ -300,7 +373,11 @@ export default function KidsShopClient() {
       <div className="flex items-center justify-between mb-6 md:hidden">
         <Sheet open={isFilterOpen} onOpenChange={setIsFilterOpen}>
           <SheetTrigger asChild>
-            <Button variant="outline" size="sm" className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2"
+            >
               <Filter className="h-4 w-4" />
               Filters
             </Button>
@@ -329,14 +406,17 @@ export default function KidsShopClient() {
                               checked={selectedCategories.includes(key)}
                               onCheckedChange={() => toggleCategory(key)}
                             />
-                            <label htmlFor={`mobile-${key}`} className="ml-2 text-sm cursor-pointer">
+                            <label
+                              htmlFor={`mobile-${key}`}
+                              className="ml-2 text-sm cursor-pointer"
+                            >
                               {value}
                             </label>
                           </div>
                           <button
                             onClick={(e) => {
-                              e.preventDefault()
-                              toggleCategoryExpansion(key)
+                              e.preventDefault();
+                              toggleCategoryExpansion(key);
                             }}
                             className="p-1 rounded-full hover:bg-muted"
                           >
@@ -351,20 +431,27 @@ export default function KidsShopClient() {
                         {/* Subcategories */}
                         {expandedCategories.includes(key) && (
                           <div className="pl-6 space-y-2 border-l-2 border-muted ml-2">
-                            {Object.entries(subcategoryMappings[key as keyof typeof subcategoryMappings] || {}).map(
-                              ([subKey, subValue]) => (
-                                <div key={subKey} className="flex items-center">
-                                  <Checkbox
-                                    id={`mobile-${key}-${subKey}`}
-                                    checked={isSubcategorySelected(key, subKey)}
-                                    onCheckedChange={() => toggleSubcategory(key, subKey)}
-                                  />
-                                  <label htmlFor={`mobile-${key}-${subKey}`} className="ml-2 text-sm cursor-pointer">
-                                    {subValue}
-                                  </label>
-                                </div>
-                              ),
-                            )}
+                            {Object.entries(
+                              subcategoryMappings[
+                                key as keyof typeof subcategoryMappings
+                              ] || {},
+                            ).map(([subKey, subValue]) => (
+                              <div key={subKey} className="flex items-center">
+                                <Checkbox
+                                  id={`mobile-${key}-${subKey}`}
+                                  checked={isSubcategorySelected(key, subKey)}
+                                  onCheckedChange={() =>
+                                    toggleSubcategory(key, subKey)
+                                  }
+                                />
+                                <label
+                                  htmlFor={`mobile-${key}-${subKey}`}
+                                  className="ml-2 text-sm cursor-pointer"
+                                >
+                                  {subValue}
+                                </label>
+                              </div>
+                            ))}
                           </div>
                         )}
                       </div>
@@ -381,7 +468,9 @@ export default function KidsShopClient() {
                       max={2000}
                       step={100}
                       value={priceRange}
-                      onValueChange={(value) => setPriceRange(value as [number, number])}
+                      onValueChange={(value) =>
+                        setPriceRange(value as [number, number])
+                      }
                       className="mb-4"
                     />
                     <div className="flex items-center justify-between">
@@ -393,7 +482,10 @@ export default function KidsShopClient() {
               </div>
 
               <div className="border-t pt-4">
-                <Button className="w-full" onClick={() => setIsFilterOpen(false)}>
+                <Button
+                  className="w-full"
+                  onClick={() => setIsFilterOpen(false)}
+                >
                   Apply Filters
                 </Button>
               </div>
@@ -414,10 +506,16 @@ export default function KidsShopClient() {
           </select>
 
           <div className="flex border rounded-md overflow-hidden">
-            <button className={`p-1 ${viewMode === "grid" ? "bg-muted" : ""}`} onClick={() => setViewMode("grid")}>
+            <button
+              className={`p-1 ${viewMode === "grid" ? "bg-muted" : ""}`}
+              onClick={() => setViewMode("grid")}
+            >
               <Grid3X3 className="h-4 w-4" />
             </button>
-            <button className={`p-1 ${viewMode === "list" ? "bg-muted" : ""}`} onClick={() => setViewMode("list")}>
+            <button
+              className={`p-1 ${viewMode === "list" ? "bg-muted" : ""}`}
+              onClick={() => setViewMode("list")}
+            >
               <LayoutGrid className="h-4 w-4" />
             </button>
           </div>
@@ -448,14 +546,17 @@ export default function KidsShopClient() {
                           checked={selectedCategories.includes(key)}
                           onCheckedChange={() => toggleCategory(key)}
                         />
-                        <label htmlFor={key} className="ml-2 text-sm cursor-pointer">
+                        <label
+                          htmlFor={key}
+                          className="ml-2 text-sm cursor-pointer"
+                        >
                           {value}
                         </label>
                       </div>
                       <button
                         onClick={(e) => {
-                          e.preventDefault()
-                          toggleCategoryExpansion(key)
+                          e.preventDefault();
+                          toggleCategoryExpansion(key);
                         }}
                         className="p-1 rounded-full hover:bg-muted"
                       >
@@ -470,20 +571,27 @@ export default function KidsShopClient() {
                     {/* Subcategories */}
                     {expandedCategories.includes(key) && (
                       <div className="pl-6 space-y-2 border-l-2 border-muted ml-2">
-                        {Object.entries(subcategoryMappings[key as keyof typeof subcategoryMappings] || {}).map(
-                          ([subKey, subValue]) => (
-                            <div key={subKey} className="flex items-center">
-                              <Checkbox
-                                id={`${key}-${subKey}`}
-                                checked={isSubcategorySelected(key, subKey)}
-                                onCheckedChange={() => toggleSubcategory(key, subKey)}
-                              />
-                              <label htmlFor={`${key}-${subKey}`} className="ml-2 text-sm cursor-pointer">
-                                {subValue}
-                              </label>
-                            </div>
-                          ),
-                        )}
+                        {Object.entries(
+                          subcategoryMappings[
+                            key as keyof typeof subcategoryMappings
+                          ] || {},
+                        ).map(([subKey, subValue]) => (
+                          <div key={subKey} className="flex items-center">
+                            <Checkbox
+                              id={`${key}-${subKey}`}
+                              checked={isSubcategorySelected(key, subKey)}
+                              onCheckedChange={() =>
+                                toggleSubcategory(key, subKey)
+                              }
+                            />
+                            <label
+                              htmlFor={`${key}-${subKey}`}
+                              className="ml-2 text-sm cursor-pointer"
+                            >
+                              {subValue}
+                            </label>
+                          </div>
+                        ))}
                       </div>
                     )}
                   </div>
@@ -500,7 +608,9 @@ export default function KidsShopClient() {
                   max={2000}
                   step={100}
                   value={priceRange}
-                  onValueChange={(value) => setPriceRange(value as [number, number])}
+                  onValueChange={(value) =>
+                    setPriceRange(value as [number, number])
+                  }
                   className="mb-4"
                 />
                 <div className="flex items-center justify-between">
@@ -531,24 +641,45 @@ export default function KidsShopClient() {
             </div>
 
             <div className="flex border rounded-md overflow-hidden">
-              <button className={`p-1 ${viewMode === "grid" ? "bg-muted" : ""}`} onClick={() => setViewMode("grid")}>
+              <button
+                className={`p-1 ${viewMode === "grid" ? "bg-muted" : ""}`}
+                onClick={() => setViewMode("grid")}
+              >
                 <Grid3X3 className="h-4 w-4" />
               </button>
-              <button className={`p-1 ${viewMode === "list" ? "bg-muted" : ""}`} onClick={() => setViewMode("list")}>
+              <button
+                className={`p-1 ${viewMode === "list" ? "bg-muted" : ""}`}
+                onClick={() => setViewMode("list")}
+              >
                 <LayoutGrid className="h-4 w-4" />
               </button>
             </div>
           </div>
 
           {/* Active Filters */}
-          {(selectedCategories.length > 0 || selectedSubcategories.length > 0) && (
+          {(selectedCategories.length > 0 ||
+            selectedSubcategories.length > 0) && (
             <div className="mb-6 flex flex-wrap gap-2">
               {/* Show categories that don't have any selected subcategories */}
               {selectedCategories
-                .filter((category) => !selectedSubcategories.some((item) => item.category === category))
+                .filter(
+                  (category) =>
+                    !selectedSubcategories.some(
+                      (item) => item.category === category,
+                    ),
+                )
                 .map((category) => (
-                  <div key={category} className="flex items-center bg-muted px-3 py-1 rounded-full text-sm">
-                    <span>{categoryFilters[category as keyof typeof categoryFilters]}</span>
+                  <div
+                    key={category}
+                    className="flex items-center bg-muted px-3 py-1 rounded-full text-sm"
+                  >
+                    <span>
+                      {
+                        categoryFilters[
+                          category as keyof typeof categoryFilters
+                        ]
+                      }
+                    </span>
                     <button
                       className="ml-2 focus:outline-none"
                       onClick={() => toggleCategory(category)}
@@ -561,11 +692,14 @@ export default function KidsShopClient() {
 
               {/* Show selected subcategories with their parent category name */}
               {selectedSubcategories.map(({ category, subcategory }) => {
-                const categoryName = categoryFilters[category as keyof typeof categoryFilters]
+                const categoryName =
+                  categoryFilters[category as keyof typeof categoryFilters];
                 const subcategoryName =
-                  subcategoryMappings[category as keyof typeof subcategoryMappings]?.[
+                  subcategoryMappings[
+                    category as keyof typeof subcategoryMappings
+                  ]?.[
                     subcategory as keyof (typeof subcategoryMappings)[keyof typeof subcategoryMappings]
-                  ]
+                  ];
 
                 return (
                   <div
@@ -583,10 +717,15 @@ export default function KidsShopClient() {
                       &times;
                     </button>
                   </div>
-                )
+                );
               })}
 
-              <Button variant="ghost" size="sm" onClick={clearFilters} className="text-xs">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearFilters}
+                className="text-xs"
+              >
                 Clear All
               </Button>
             </div>
@@ -595,11 +734,19 @@ export default function KidsShopClient() {
           {filteredProducts.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12">
               <p className="text-lg font-medium mb-4">No products found</p>
-              <p className="text-muted-foreground mb-6">Try adjusting your filters or search criteria</p>
+              <p className="text-muted-foreground mb-6">
+                Try adjusting your filters or search criteria
+              </p>
               <Button onClick={clearFilters}>Clear Filters</Button>
             </div>
           ) : (
-            <div className={viewMode === "grid" ? "grid grid-cols-2 md:grid-cols-3 gap-4" : "space-y-4"}>
+            <div
+              className={
+                viewMode === "grid"
+                  ? "grid grid-cols-2 md:grid-cols-3 gap-4"
+                  : "space-y-4"
+              }
+            >
               {filteredProducts.map((product) => (
                 <Link key={product.id} href={`/product/${product.id}`}>
                   {viewMode === "grid" ? (
@@ -614,8 +761,12 @@ export default function KidsShopClient() {
                         />
                       </div>
                       <CardContent className="p-3">
-                        <h3 className="font-medium text-sm line-clamp-2">{product.name}</h3>
-                        <p className="mt-1 font-medium text-sm">₹{product.price.toLocaleString("en-IN")}</p>
+                        <h3 className="font-medium text-sm line-clamp-2">
+                          {product.name}
+                        </h3>
+                        <p className="mt-1 font-medium text-sm">
+                          ₹{product.price.toLocaleString("en-IN")}
+                        </p>
                       </CardContent>
                     </Card>
                   ) : (
@@ -632,10 +783,19 @@ export default function KidsShopClient() {
                         </div>
                         <CardContent className="p-3 flex-1">
                           <h3 className="font-medium">{product.name}</h3>
-                          <p className="mt-1 font-medium">₹{product.price.toLocaleString("en-IN")}</p>
+                          <p className="mt-1 font-medium">
+                            ₹{product.price.toLocaleString("en-IN")}
+                          </p>
                           <p className="mt-2 text-sm text-muted-foreground">
-                            {categoryFilters[product.kidGender as keyof typeof categoryFilters]} -{" "}
-                            {subcategoryMappings[product.kidGender as keyof typeof subcategoryMappings]?.[
+                            {
+                              categoryFilters[
+                                product.kidGender as keyof typeof categoryFilters
+                              ]
+                            }{" "}
+                            -{" "}
+                            {subcategoryMappings[
+                              product.kidGender as keyof typeof subcategoryMappings
+                            ]?.[
                               product.subcategory as keyof (typeof subcategoryMappings)[keyof typeof subcategoryMappings]
                             ] || product.subcategory}
                           </p>
@@ -650,5 +810,5 @@ export default function KidsShopClient() {
         </div>
       </div>
     </div>
-  )
+  );
 }

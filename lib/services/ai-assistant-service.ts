@@ -227,7 +227,27 @@ When the user asks about specific products, try to identify them from your knowl
       tryOnHistory?: number;
       savedProducts?: number;
     },
+    conversationHistory?: Array<{
+      role: "user" | "assistant";
+      content: string;
+      timestamp?: Date | string;
+    }>,
   ): Promise<AIResponse> {
+    if (conversationHistory && conversationHistory.length > 0) {
+      this.conversationHistory = conversationHistory
+        .filter(
+          (msg) =>
+            (msg.role === "user" || msg.role === "assistant") &&
+            typeof msg.content === "string" &&
+            msg.content.trim().length > 0,
+        )
+        .map((msg) => ({
+          role: msg.role,
+          content: msg.content,
+          timestamp: msg.timestamp ? new Date(msg.timestamp) : undefined,
+        }));
+    }
+
     // Add user message to history
     this.conversationHistory.push({
       role: "user",

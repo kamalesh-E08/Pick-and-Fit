@@ -12,6 +12,8 @@ import {
   BarChart,
   Eye,
   Star,
+  Bell,
+  X,
 } from "lucide-react";
 
 interface SellerStats {
@@ -25,10 +27,27 @@ interface SellerStats {
   lowStockProducts: number;
 }
 
+interface SellerNotification {
+  id: string;
+  orderId: string;
+  orderNumber: string;
+  orderStatus: string;
+  paymentStatus: string;
+  orderDate: string;
+  customerName: string;
+  itemCount: number;
+  sellerTotal: number;
+  title: string;
+  message: string;
+}
+
 export default function SellerDashboard() {
   const router = useRouter();
   const [stats, setStats] = useState<SellerStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [notifications, setNotifications] = useState<SellerNotification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
@@ -38,6 +57,13 @@ export default function SellerDashboard() {
     }
 
     fetchStats();
+    fetchNotifications();
+
+    const poll = setInterval(() => {
+      fetchNotifications();
+    }, 30000);
+
+    return () => clearInterval(poll);
   }, [router]);
 
   const fetchStats = async () => {
@@ -56,6 +82,38 @@ export default function SellerDashboard() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchNotifications = async () => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      const response = await fetch("/seller/api/notifications", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) return;
+
+      const data = await response.json();
+      const nextNotifications: SellerNotification[] = data.notifications || [];
+      setNotifications(nextNotifications);
+
+      const lastSeen = localStorage.getItem("seller_notifications_last_seen");
+      const lastSeenTime = lastSeen ? new Date(lastSeen).getTime() : 0;
+      const unread = nextNotifications.filter(
+        (item) => new Date(item.orderDate).getTime() > lastSeenTime,
+      ).length;
+      setUnreadCount(unread);
+    } catch (error) {
+      console.error("Failed to fetch notifications:", error);
+    }
+  };
+
+  const markNotificationsAsSeen = () => {
+    localStorage.setItem(
+      "seller_notifications_last_seen",
+      new Date().toISOString(),
+    );
+    setUnreadCount(0);
   };
 
   const menuItems = [
@@ -90,13 +148,83 @@ export default function SellerDashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow">
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
+      <header className="bg-background/95 border-b border-border backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="max-w-7xl mx-auto px-4 py-6">
-          <h1 className="text-3xl font-bold text-gray-900">Seller Dashboard</h1>
-          <p className="text-gray-500 mt-1">
-            Manage your products, orders, and business performance
-          </p>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">
+                Seller Dashboard
+              </h1>
+              <p className="text-muted-foreground mt-1">
+                Manage your products, orders, and business performance
+              </p>
+            </div>
+
+            <div className="relative">
+              <button
+                onClick={() => {
+                  const next = !showNotifications;
+                  setShowNotifications(next);
+                  if (next) {
+                    markNotificationsAsSeen();
+                  }
+                }}
+                className="relative p-2 rounded-lg border border-border bg-card hover:bg-muted/60 transition-colors"
+                aria-label="Open notifications"
+              >
+                <Bell className="w-5 h-5 text-foreground" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] min-w-5 h-5 px-1 rounded-full flex items-center justify-center font-semibold">
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </span>
+                )}
+              </button>
+
+              {showNotifications && (
+                <div className="absolute right-0 mt-2 w-[360px] bg-card border border-border rounded-lg shadow-lg z-30">
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+                    <h3 className="font-semibold text-foreground">
+                      New Orders
+                    </h3>
+                    <button
+                      onClick={() => setShowNotifications(false)}
+                      className="p-1 rounded hover:bg-muted/60"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="max-h-96 overflow-y-auto">
+                    {notifications.length === 0 ? (
+                      <p className="px-4 py-6 text-sm text-muted-foreground text-center">
+                        No order notifications yet
+                      </p>
+                    ) : (
+                      notifications.map((item) => (
+                        <Link
+                          key={item.id}
+                          href={`/seller/orders`}
+                          className="block px-4 py-3 border-b border-border last:border-b-0 hover:bg-muted/40"
+                        >
+                          <p className="text-sm font-semibold text-foreground">
+                            {item.title}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {item.message}
+                          </p>
+                          <p className="text-[11px] text-muted-foreground mt-1">
+                            {item.customerName} •{" "}
+                            {new Date(item.orderDate).toLocaleString()}
+                          </p>
+                        </Link>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </header>
 
@@ -140,10 +268,10 @@ export default function SellerDashboard() {
             {[1, 2, 3, 4].map((i) => (
               <div
                 key={i}
-                className="bg-white rounded-lg shadow p-6 animate-pulse"
+                className="bg-card rounded-lg border border-border p-6 animate-pulse"
               >
-                <div className="h-4 bg-gray-200 rounded w-3/4 mb-4"></div>
-                <div className="h-8 bg-gray-200 rounded w-1/2"></div>
+                <div className="h-4 bg-muted rounded w-3/4 mb-4"></div>
+                <div className="h-8 bg-muted rounded w-1/2"></div>
               </div>
             ))}
           </div>
@@ -155,14 +283,16 @@ export default function SellerDashboard() {
             const Icon = item.icon;
             return (
               <Link key={item.label} href={item.href}>
-                <div className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition-shadow cursor-pointer">
+                <div className="bg-card p-6 rounded-lg border border-border shadow-sm hover:shadow-md hover:border-primary/30 transition-all cursor-pointer">
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-lg font-semibold text-gray-900">
+                    <h3 className="text-lg font-semibold text-foreground">
                       {item.label}
                     </h3>
                     <Icon className={`w-8 h-8 ${item.color}`} />
                   </div>
-                  <p className="text-gray-600 text-sm">{item.description}</p>
+                  <p className="text-muted-foreground text-sm">
+                    {item.description}
+                  </p>
                 </div>
               </Link>
             );
@@ -172,8 +302,8 @@ export default function SellerDashboard() {
         {/* Quick Insights */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Recent Performance */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">
+          <div className="bg-card rounded-lg border border-border shadow-sm p-6">
+            <h2 className="text-xl font-bold text-foreground mb-4">
               Recent Performance
             </h2>
             <div className="space-y-4">
@@ -199,8 +329,8 @@ export default function SellerDashboard() {
           </div>
 
           {/* Alerts */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+          <div className="bg-card rounded-lg border border-border shadow-sm p-6">
+            <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
               <AlertCircle className="w-5 h-5 text-orange-600" />
               Alerts & Actions
             </h2>
@@ -232,11 +362,11 @@ export default function SellerDashboard() {
         </div>
 
         {/* Tips Section */}
-        <div className="mt-8 bg-indigo-50 border border-indigo-200 rounded-lg p-6">
-          <h3 className="font-semibold text-indigo-900 mb-3">
+        <div className="mt-8 bg-primary/10 border border-primary/20 rounded-lg p-6">
+          <h3 className="font-semibold text-foreground mb-3">
             💡 Seller Tips for Success
           </h3>
-          <ul className="space-y-2 text-sm text-indigo-800">
+          <ul className="space-y-2 text-sm text-muted-foreground">
             <li>• Keep product descriptions detailed and accurate</li>
             <li>• Upload high-quality product images from multiple angles</li>
             <li>• Respond to customer inquiries within 24 hours</li>
@@ -272,16 +402,20 @@ function StatCard({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
+    <div className="bg-card rounded-lg border border-border shadow-sm p-6">
       <div className="flex items-center justify-between mb-4">
         <div className={`p-3 rounded-lg ${colorMap[color]}`}>
           <Icon className="w-6 h-6" />
         </div>
       </div>
       <div>
-        <p className="text-gray-500 text-sm font-medium mb-1">{label}</p>
-        <p className="text-2xl font-bold text-gray-900">{value}</p>
-        {subtitle && <p className="text-xs text-gray-500 mt-1">{subtitle}</p>}
+        <p className="text-muted-foreground text-sm font-medium mb-1">
+          {label}
+        </p>
+        <p className="text-2xl font-bold text-foreground">{value}</p>
+        {subtitle && (
+          <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
+        )}
       </div>
     </div>
   );
@@ -302,11 +436,11 @@ function InsightItem({
   return (
     <div className="flex items-center justify-between py-2">
       <div className="flex items-center gap-3">
-        <Icon className="w-5 h-5 text-gray-400" />
-        <span className="text-gray-700">{label}</span>
+        <Icon className="w-5 h-5 text-muted-foreground" />
+        <span className="text-foreground">{label}</span>
       </div>
       <span
-        className={`font-semibold ${positive ? "text-green-600" : "text-gray-600"}`}
+        className={`font-semibold ${positive ? "text-green-600" : "text-muted-foreground"}`}
       >
         {value}
       </span>

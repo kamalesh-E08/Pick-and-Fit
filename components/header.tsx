@@ -411,6 +411,7 @@ export default function Header() {
   const { cartCount } = useCart();
   const { wishlistCount } = useWishlist();
   const { user, signOut } = useAuth();
+  const isCustomerUser = !user || user.role === "customer";
 
   // Add scroll effect
   useEffect(() => {
@@ -493,21 +494,23 @@ export default function Header() {
           {/* User Actions */}
           <div className="flex items-center gap-5">
             <div className="hidden md:flex items-center gap-5">
-              <Link href="/wishlist" className="relative">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="relative group h-9 px-2"
-                >
-                  <Heart className="h-[18px] w-[18px] group-hover:text-red-500 transition-colors" />
-                  <span className="sr-only">Wishlist</span>
-                  {wishlistCount > 0 && (
-                    <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
-                      {wishlistCount}
-                    </span>
-                  )}
-                </Button>
-              </Link>
+              {isCustomerUser && (
+                <Link href="/wishlist" className="relative">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="relative group h-9 px-2"
+                  >
+                    <Heart className="h-[18px] w-[18px] group-hover:text-red-500 transition-colors" />
+                    <span className="sr-only">Wishlist</span>
+                    {wishlistCount > 0 && (
+                      <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+                        {wishlistCount}
+                      </span>
+                    )}
+                  </Button>
+                </Link>
+              )}
 
               <Link href="/virtual-try-on" className="relative">
                 <Button
@@ -533,21 +536,23 @@ export default function Header() {
                 </Button>
               </Link>
 
-              <Link href="/cart" className="relative">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="relative group h-9 px-2"
-                >
-                  <ShoppingBag className="h-[18px] w-[18px] group-hover:text-green-500 transition-colors" />
-                  <span className="sr-only">Cart</span>
-                  {cartCount > 0 && (
-                    <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
-                      {cartCount}
-                    </span>
-                  )}
-                </Button>
-              </Link>
+              {isCustomerUser && (
+                <Link href="/cart" className="relative">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="relative group h-9 px-2"
+                  >
+                    <ShoppingBag className="h-[18px] w-[18px] group-hover:text-green-500 transition-colors" />
+                    <span className="sr-only">Cart</span>
+                    {cartCount > 0 && (
+                      <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+                        {cartCount}
+                      </span>
+                    )}
+                  </Button>
+                </Link>
+              )}
 
               <ThemeToggle />
 
@@ -585,18 +590,47 @@ export default function Header() {
                         </Link>
                       </DropdownMenuItem>
                     )}
-                    {(user?.role === "admin" || user?.role === "seller") && (
-                      <DropdownMenuSeparator />
+                    {user?.role === "delivery" && (
+                      <DropdownMenuItem asChild>
+                        <Link
+                          href="/delivery"
+                          className="font-semibold text-purple-600"
+                        >
+                          Delivery Dashboard
+                        </Link>
+                      </DropdownMenuItem>
                     )}
+                    {(user?.role === "admin" ||
+                      user?.role === "seller" ||
+                      user?.role === "delivery") && <DropdownMenuSeparator />}
                     <DropdownMenuItem asChild>
                       <Link href="/profile">Profile</Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href="/orders">Orders</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href="/wishlist">Wishlist</Link>
-                    </DropdownMenuItem>
+                    {isCustomerUser && (
+                      <DropdownMenuItem asChild>
+                        <Link href="/orders">Orders</Link>
+                      </DropdownMenuItem>
+                    )}
+                    {user?.role === "seller" && (
+                      <DropdownMenuItem asChild>
+                        <Link href="/seller/orders">Seller Orders</Link>
+                      </DropdownMenuItem>
+                    )}
+                    {user?.role === "delivery" && (
+                      <DropdownMenuItem asChild>
+                        <Link href="/delivery/history">Delivery History</Link>
+                      </DropdownMenuItem>
+                    )}
+                    {user?.role === "admin" && (
+                      <DropdownMenuItem asChild>
+                        <Link href="/admin">Order Management</Link>
+                      </DropdownMenuItem>
+                    )}
+                    {isCustomerUser && (
+                      <DropdownMenuItem asChild>
+                        <Link href="/wishlist">Wishlist</Link>
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem asChild>
                       <Link href="/virtual-try-on">Virtual Try-On</Link>
                     </DropdownMenuItem>
@@ -632,21 +666,23 @@ export default function Header() {
 
             {/* Mobile Menu Button */}
             <div className="md:hidden flex items-center gap-3">
-              <Link href="/cart" className="relative">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="relative group h-9 px-2"
-                >
-                  <ShoppingBag className="h-[18px] w-[18px]" />
-                  <span className="sr-only">Cart</span>
-                  {cartCount > 0 && (
-                    <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
-                      {cartCount}
-                    </span>
-                  )}
-                </Button>
-              </Link>
+              {isCustomerUser && (
+                <Link href="/cart" className="relative">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="relative group h-9 px-2"
+                  >
+                    <ShoppingBag className="h-[18px] w-[18px]" />
+                    <span className="sr-only">Cart</span>
+                    {cartCount > 0 && (
+                      <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+                        {cartCount}
+                      </span>
+                    )}
+                  </Button>
+                </Link>
+              )}
 
               <Sheet>
                 <SheetTrigger asChild>
@@ -688,7 +724,8 @@ export default function Header() {
                             </div>
                           </div>
                           {(user.role === "admin" ||
-                            user.role === "seller") && (
+                            user.role === "seller" ||
+                            user.role === "delivery") && (
                             <div className="mt-4 space-y-2">
                               {user.role === "admin" && (
                                 <Button
@@ -706,6 +743,16 @@ export default function Header() {
                                   <Link href="/seller">Seller Dashboard</Link>
                                 </Button>
                               )}
+                              {user.role === "delivery" && (
+                                <Button
+                                  asChild
+                                  className="w-full bg-purple-600 hover:bg-purple-700"
+                                >
+                                  <Link href="/delivery">
+                                    Delivery Dashboard
+                                  </Link>
+                                </Button>
+                              )}
                             </div>
                           )}
                         </div>
@@ -721,21 +768,23 @@ export default function Header() {
                     />
                     <div className="mt-auto border-t py-4">
                       <div className="flex items-center justify-around">
-                        <Link href="/wishlist" className="relative">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="relative"
-                          >
-                            <Heart className="h-5 w-5" />
-                            <span className="sr-only">Wishlist</span>
-                            {wishlistCount > 0 && (
-                              <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
-                                {wishlistCount}
-                              </span>
-                            )}
-                          </Button>
-                        </Link>
+                        {isCustomerUser && (
+                          <Link href="/wishlist" className="relative">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="relative"
+                            >
+                              <Heart className="h-5 w-5" />
+                              <span className="sr-only">Wishlist</span>
+                              {wishlistCount > 0 && (
+                                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+                                  {wishlistCount}
+                                </span>
+                              )}
+                            </Button>
+                          </Link>
+                        )}
                         <Link href="/ai-assistant">
                           <Button
                             variant="ghost"

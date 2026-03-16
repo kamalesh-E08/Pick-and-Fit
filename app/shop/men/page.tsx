@@ -1,15 +1,15 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import Link from "next/link"
-import Image from "next/image"
-import { ChevronDown, Filter, Grid3X3, LayoutGrid } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Slider } from "@/components/ui/slider"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { cn } from "@/lib/utils"
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { ChevronDown, Filter, Grid3X3, LayoutGrid } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Slider } from "@/components/ui/slider";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { cn } from "@/lib/utils";
 
 // Mock product data (simplified version)
 const mockProducts = [
@@ -131,7 +131,7 @@ const mockProducts = [
     subcategory: "briefs",
     gender: "men",
   },
-]
+];
 
 // Category structure for filters
 const categoryFilters = {
@@ -144,7 +144,7 @@ const categoryFilters = {
   "western-wear": "Western Wear",
   "night-lounge-wear": "Night and Lounge Wear",
   "ethnic-festive": "Ethnic and Festive",
-}
+};
 
 // Subcategory mappings
 const subcategoryMappings = {
@@ -208,42 +208,82 @@ const subcategoryMappings = {
     kurtas: "Kurtas",
     "kurta-sets": "Kurta Sets",
   },
-}
+};
 
 // Type for selected subcategories that includes the parent category
 type SelectedSubcategory = {
-  parent: string
-  key: string
-}
+  parent: string;
+  key: string;
+};
 
 export default function MenShopPage() {
-  const [products, setProducts] = useState(mockProducts)
-  const [filteredProducts, setFilteredProducts] = useState(mockProducts)
-  const [expandedCategories, setExpandedCategories] = useState<string[]>([])
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([])
-  const [selectedSubcategories, setSelectedSubcategories] = useState<SelectedSubcategory[]>([])
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 5000])
-  const [sortBy, setSortBy] = useState<string>("featured")
-  const [isFilterOpen, setIsFilterOpen] = useState(false)
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
+  const [products, setProducts] = useState(mockProducts);
+  const [filteredProducts, setFilteredProducts] = useState(mockProducts);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(false);
+  const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedSubcategories, setSelectedSubcategories] = useState<
+    SelectedSubcategory[]
+  >([]);
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 5000]);
+  const [sortBy, setSortBy] = useState<string>("featured");
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+
+  useEffect(() => {
+    const loadLiveProducts = async () => {
+      try {
+        setIsLoadingProducts(true);
+        const response = await fetch("/api/products?gender=men&limit=120");
+        if (!response.ok) return;
+
+        const data = await response.json();
+        const liveProducts = Array.isArray(data?.products)
+          ? data.products.map((item: any) => ({
+              id: Number(item.productId) || item.productId || item._id,
+              name: item.name,
+              price: Number(item.price || 0),
+              image: item.mainImage || item.images?.[0] || "/placeholder.svg",
+              category: item.category || "",
+              subcategory: item.subcategory || "",
+              gender: item.gender || "men",
+            }))
+          : [];
+
+        if (liveProducts.length > 0) {
+          setProducts(liveProducts);
+          setFilteredProducts(liveProducts);
+        }
+      } catch (error) {
+        console.error("Failed to load men products:", error);
+      } finally {
+        setIsLoadingProducts(false);
+      }
+    };
+
+    loadLiveProducts();
+  }, []);
 
   // Filter products based on selected criteria
   useEffect(() => {
-    let filtered = [...products]
+    let filtered = [...products];
 
     // Filter by gender (always men for this page)
-    filtered = filtered.filter((product) => product.gender === "men")
+    filtered = filtered.filter((product) => product.gender === "men");
 
     // Filter by price range
-    filtered = filtered.filter((product) => product.price >= priceRange[0] && product.price <= priceRange[1])
+    filtered = filtered.filter(
+      (product) =>
+        product.price >= priceRange[0] && product.price <= priceRange[1],
+    );
 
     // Apply category and subcategory filters
     if (selectedCategories.length > 0) {
       // Create a map to track which categories have selected subcategories
-      const categoriesWithSelectedSubs = new Set<string>()
+      const categoriesWithSelectedSubs = new Set<string>();
       selectedSubcategories.forEach((sub) => {
-        categoriesWithSelectedSubs.add(sub.parent)
-      })
+        categoriesWithSelectedSubs.add(sub.parent);
+      });
 
       // Filter products based on categories and subcategories
       filtered = filtered.filter((product) => {
@@ -253,78 +293,91 @@ export default function MenShopPage() {
           if (categoriesWithSelectedSubs.has(product.category)) {
             // Check if the product's subcategory is one of the selected ones for this category
             return selectedSubcategories.some(
-              (sub) => sub.parent === product.category && sub.key === product.subcategory,
-            )
+              (sub) =>
+                sub.parent === product.category &&
+                sub.key === product.subcategory,
+            );
           }
           // If no subcategories are selected for this category, include all products from this category
-          return true
+          return true;
         }
-        return false
-      })
+        return false;
+      });
     }
 
     // Sort products
     if (sortBy === "price-low-high") {
-      filtered.sort((a, b) => a.price - b.price)
+      filtered.sort((a, b) => a.price - b.price);
     } else if (sortBy === "price-high-low") {
-      filtered.sort((a, b) => b.price - a.price)
+      filtered.sort((a, b) => b.price - a.price);
     } else if (sortBy === "newest") {
       // In a real app, you would sort by date
-      filtered.sort((a, b) => b.id - a.id)
+      filtered.sort((a, b) => b.id - a.id);
     }
 
-    setFilteredProducts(filtered)
-  }, [products, selectedCategories, selectedSubcategories, priceRange, sortBy])
+    setFilteredProducts(filtered);
+  }, [products, selectedCategories, selectedSubcategories, priceRange, sortBy]);
 
   // Toggle category expansion
   const toggleCategoryExpansion = (category: string) => {
     setExpandedCategories((prev) =>
-      prev.includes(category) ? prev.filter((c) => c !== category) : [...prev, category],
-    )
-  }
+      prev.includes(category)
+        ? prev.filter((c) => c !== category)
+        : [...prev, category],
+    );
+  };
 
   // Toggle category selection
   const toggleCategory = (category: string) => {
     // Toggle the category selection
     const newSelectedCategories = selectedCategories.includes(category)
       ? selectedCategories.filter((c) => c !== category)
-      : [...selectedCategories, category]
+      : [...selectedCategories, category];
 
-    setSelectedCategories(newSelectedCategories)
+    setSelectedCategories(newSelectedCategories);
 
     // If the category is being deselected, remove all its subcategories
     if (selectedCategories.includes(category)) {
-      setSelectedSubcategories((prev) => prev.filter((sub) => sub.parent !== category))
+      setSelectedSubcategories((prev) =>
+        prev.filter((sub) => sub.parent !== category),
+      );
     }
 
     // Toggle expansion when selecting/deselecting
-    if (!expandedCategories.includes(category) && !selectedCategories.includes(category)) {
-      setExpandedCategories((prev) => [...prev, category])
+    if (
+      !expandedCategories.includes(category) &&
+      !selectedCategories.includes(category)
+    ) {
+      setExpandedCategories((prev) => [...prev, category]);
     }
-  }
+  };
 
   // Toggle subcategory selection
   const toggleSubcategory = (parent: string, key: string) => {
-    const isSelected = isSubcategorySelected(parent, key)
+    const isSelected = isSubcategorySelected(parent, key);
 
     if (isSelected) {
       // Remove the subcategory
-      setSelectedSubcategories((prev) => prev.filter((sub) => !(sub.parent === parent && sub.key === key)))
+      setSelectedSubcategories((prev) =>
+        prev.filter((sub) => !(sub.parent === parent && sub.key === key)),
+      );
     } else {
       // Add the subcategory
-      setSelectedSubcategories((prev) => [...prev, { parent, key }])
+      setSelectedSubcategories((prev) => [...prev, { parent, key }]);
 
       // Make sure the parent category is selected
       if (!selectedCategories.includes(parent)) {
-        setSelectedCategories((prev) => [...prev, parent])
+        setSelectedCategories((prev) => [...prev, parent]);
       }
     }
-  }
+  };
 
   // Helper function to check if a subcategory is selected
   const isSubcategorySelected = (parent: string, key: string) => {
-    return selectedSubcategories.some((sub) => sub.parent === parent && sub.key === key)
-  }
+    return selectedSubcategories.some(
+      (sub) => sub.parent === parent && sub.key === key,
+    );
+  };
 
   // Get subcategory display name
   const getSubcategoryDisplayName = (parent: string, key: string) => {
@@ -332,15 +385,15 @@ export default function MenShopPage() {
       subcategoryMappings[parent as keyof typeof subcategoryMappings]?.[
         key as keyof (typeof subcategoryMappings)[keyof typeof subcategoryMappings]
       ] || key
-    )
-  }
+    );
+  };
 
   // Clear all filters
   const clearFilters = () => {
-    setSelectedCategories([])
-    setSelectedSubcategories([])
-    setPriceRange([0, 5000])
-  }
+    setSelectedCategories([]);
+    setSelectedSubcategories([]);
+    setPriceRange([0, 5000]);
+  };
 
   return (
     <div className="container px-4 py-8">
@@ -348,13 +401,19 @@ export default function MenShopPage() {
       <nav className="mb-6">
         <ol className="flex flex-wrap items-center text-sm">
           <li className="flex items-center">
-            <Link href="/" className="text-muted-foreground hover:text-foreground">
+            <Link
+              href="/"
+              className="text-muted-foreground hover:text-foreground"
+            >
               Home
             </Link>
           </li>
           <li className="flex items-center">
             <span className="mx-2 text-muted-foreground">/</span>
-            <Link href="/shop" className="text-muted-foreground hover:text-foreground">
+            <Link
+              href="/shop"
+              className="text-muted-foreground hover:text-foreground"
+            >
               Shop
             </Link>
           </li>
@@ -369,7 +428,9 @@ export default function MenShopPage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold">Men's Collection</h1>
         <p className="mt-2 text-muted-foreground">
-          {filteredProducts.length} {filteredProducts.length === 1 ? "product" : "products"} available
+          {isLoadingProducts
+            ? "Loading products..."
+            : `${filteredProducts.length} ${filteredProducts.length === 1 ? "product" : "products"} available`}
         </p>
       </div>
 
@@ -377,7 +438,11 @@ export default function MenShopPage() {
       <div className="flex items-center justify-between mb-6 md:hidden">
         <Sheet open={isFilterOpen} onOpenChange={setIsFilterOpen}>
           <SheetTrigger asChild>
-            <Button variant="outline" size="sm" className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2"
+            >
               <Filter className="h-4 w-4" />
               Filters
             </Button>
@@ -406,21 +471,33 @@ export default function MenShopPage() {
                               checked={selectedCategories.includes(key)}
                               onCheckedChange={() => toggleCategory(key)}
                             />
-                            <label htmlFor={`mobile-${key}`} className="ml-2 text-sm cursor-pointer">
+                            <label
+                              htmlFor={`mobile-${key}`}
+                              className="ml-2 text-sm cursor-pointer"
+                            >
                               {value}
                             </label>
                           </div>
-                          {Object.keys(subcategoryMappings[key as keyof typeof subcategoryMappings] || {}).length >
-                            0 && (
+                          {Object.keys(
+                            subcategoryMappings[
+                              key as keyof typeof subcategoryMappings
+                            ] || {},
+                          ).length > 0 && (
                             <button
                               onClick={() => toggleCategoryExpansion(key)}
                               className="p-1 rounded-full hover:bg-muted"
-                              aria-label={expandedCategories.includes(key) ? "Collapse" : "Expand"}
+                              aria-label={
+                                expandedCategories.includes(key)
+                                  ? "Collapse"
+                                  : "Expand"
+                              }
                             >
                               <ChevronDown
                                 className={cn(
                                   "h-4 w-4 transition-transform",
-                                  expandedCategories.includes(key) ? "transform rotate-180" : "",
+                                  expandedCategories.includes(key)
+                                    ? "transform rotate-180"
+                                    : "",
                                 )}
                               />
                             </button>
@@ -430,20 +507,27 @@ export default function MenShopPage() {
                         {/* Subcategories */}
                         {expandedCategories.includes(key) && (
                           <div className="pl-6 space-y-1 border-l-2 border-muted ml-1.5">
-                            {Object.entries(subcategoryMappings[key as keyof typeof subcategoryMappings] || {}).map(
-                              ([subKey, subValue]) => (
-                                <div key={subKey} className="flex items-center">
-                                  <Checkbox
-                                    id={`mobile-${key}-${subKey}`}
-                                    checked={isSubcategorySelected(key, subKey)}
-                                    onCheckedChange={() => toggleSubcategory(key, subKey)}
-                                  />
-                                  <label htmlFor={`mobile-${key}-${subKey}`} className="ml-2 text-sm cursor-pointer">
-                                    {subValue}
-                                  </label>
-                                </div>
-                              ),
-                            )}
+                            {Object.entries(
+                              subcategoryMappings[
+                                key as keyof typeof subcategoryMappings
+                              ] || {},
+                            ).map(([subKey, subValue]) => (
+                              <div key={subKey} className="flex items-center">
+                                <Checkbox
+                                  id={`mobile-${key}-${subKey}`}
+                                  checked={isSubcategorySelected(key, subKey)}
+                                  onCheckedChange={() =>
+                                    toggleSubcategory(key, subKey)
+                                  }
+                                />
+                                <label
+                                  htmlFor={`mobile-${key}-${subKey}`}
+                                  className="ml-2 text-sm cursor-pointer"
+                                >
+                                  {subValue}
+                                </label>
+                              </div>
+                            ))}
                           </div>
                         )}
                       </div>
@@ -460,7 +544,9 @@ export default function MenShopPage() {
                       max={5000}
                       step={100}
                       value={priceRange}
-                      onValueChange={(value) => setPriceRange(value as [number, number])}
+                      onValueChange={(value) =>
+                        setPriceRange(value as [number, number])
+                      }
                       className="mb-4"
                     />
                     <div className="flex items-center justify-between">
@@ -472,7 +558,10 @@ export default function MenShopPage() {
               </div>
 
               <div className="border-t pt-4">
-                <Button className="w-full" onClick={() => setIsFilterOpen(false)}>
+                <Button
+                  className="w-full"
+                  onClick={() => setIsFilterOpen(false)}
+                >
                   Apply Filters
                 </Button>
               </div>
@@ -493,10 +582,16 @@ export default function MenShopPage() {
           </select>
 
           <div className="flex border rounded-md overflow-hidden">
-            <button className={`p-1 ${viewMode === "grid" ? "bg-muted" : ""}`} onClick={() => setViewMode("grid")}>
+            <button
+              className={`p-1 ${viewMode === "grid" ? "bg-muted" : ""}`}
+              onClick={() => setViewMode("grid")}
+            >
               <Grid3X3 className="h-4 w-4" />
             </button>
-            <button className={`p-1 ${viewMode === "list" ? "bg-muted" : ""}`} onClick={() => setViewMode("list")}>
+            <button
+              className={`p-1 ${viewMode === "list" ? "bg-muted" : ""}`}
+              onClick={() => setViewMode("list")}
+            >
               <LayoutGrid className="h-4 w-4" />
             </button>
           </div>
@@ -527,20 +622,33 @@ export default function MenShopPage() {
                           checked={selectedCategories.includes(key)}
                           onCheckedChange={() => toggleCategory(key)}
                         />
-                        <label htmlFor={key} className="ml-2 text-sm cursor-pointer">
+                        <label
+                          htmlFor={key}
+                          className="ml-2 text-sm cursor-pointer"
+                        >
                           {value}
                         </label>
                       </div>
-                      {Object.keys(subcategoryMappings[key as keyof typeof subcategoryMappings] || {}).length > 0 && (
+                      {Object.keys(
+                        subcategoryMappings[
+                          key as keyof typeof subcategoryMappings
+                        ] || {},
+                      ).length > 0 && (
                         <button
                           onClick={() => toggleCategoryExpansion(key)}
                           className="p-1 rounded-full hover:bg-muted"
-                          aria-label={expandedCategories.includes(key) ? "Collapse" : "Expand"}
+                          aria-label={
+                            expandedCategories.includes(key)
+                              ? "Collapse"
+                              : "Expand"
+                          }
                         >
                           <ChevronDown
                             className={cn(
                               "h-4 w-4 transition-transform",
-                              expandedCategories.includes(key) ? "transform rotate-180" : "",
+                              expandedCategories.includes(key)
+                                ? "transform rotate-180"
+                                : "",
                             )}
                           />
                         </button>
@@ -550,20 +658,27 @@ export default function MenShopPage() {
                     {/* Subcategories */}
                     {expandedCategories.includes(key) && (
                       <div className="pl-6 space-y-1 border-l-2 border-muted ml-1.5">
-                        {Object.entries(subcategoryMappings[key as keyof typeof subcategoryMappings] || {}).map(
-                          ([subKey, subValue]) => (
-                            <div key={subKey} className="flex items-center">
-                              <Checkbox
-                                id={`${key}-${subKey}`}
-                                checked={isSubcategorySelected(key, subKey)}
-                                onCheckedChange={() => toggleSubcategory(key, subKey)}
-                              />
-                              <label htmlFor={`${key}-${subKey}`} className="ml-2 text-sm cursor-pointer">
-                                {subValue}
-                              </label>
-                            </div>
-                          ),
-                        )}
+                        {Object.entries(
+                          subcategoryMappings[
+                            key as keyof typeof subcategoryMappings
+                          ] || {},
+                        ).map(([subKey, subValue]) => (
+                          <div key={subKey} className="flex items-center">
+                            <Checkbox
+                              id={`${key}-${subKey}`}
+                              checked={isSubcategorySelected(key, subKey)}
+                              onCheckedChange={() =>
+                                toggleSubcategory(key, subKey)
+                              }
+                            />
+                            <label
+                              htmlFor={`${key}-${subKey}`}
+                              className="ml-2 text-sm cursor-pointer"
+                            >
+                              {subValue}
+                            </label>
+                          </div>
+                        ))}
                       </div>
                     )}
                   </div>
@@ -580,7 +695,9 @@ export default function MenShopPage() {
                   max={5000}
                   step={100}
                   value={priceRange}
-                  onValueChange={(value) => setPriceRange(value as [number, number])}
+                  onValueChange={(value) =>
+                    setPriceRange(value as [number, number])
+                  }
                   className="mb-4"
                 />
                 <div className="flex items-center justify-between">
@@ -611,23 +728,44 @@ export default function MenShopPage() {
             </div>
 
             <div className="flex border rounded-md overflow-hidden">
-              <button className={`p-1 ${viewMode === "grid" ? "bg-muted" : ""}`} onClick={() => setViewMode("grid")}>
+              <button
+                className={`p-1 ${viewMode === "grid" ? "bg-muted" : ""}`}
+                onClick={() => setViewMode("grid")}
+              >
                 <Grid3X3 className="h-4 w-4" />
               </button>
-              <button className={`p-1 ${viewMode === "list" ? "bg-muted" : ""}`} onClick={() => setViewMode("list")}>
+              <button
+                className={`p-1 ${viewMode === "list" ? "bg-muted" : ""}`}
+                onClick={() => setViewMode("list")}
+              >
                 <LayoutGrid className="h-4 w-4" />
               </button>
             </div>
           </div>
 
           {/* Active Filters */}
-          {(selectedCategories.length > 0 || selectedSubcategories.length > 0) && (
+          {(selectedCategories.length > 0 ||
+            selectedSubcategories.length > 0) && (
             <div className="mb-6 flex flex-wrap gap-2">
               {selectedCategories
-                .filter((category) => !selectedSubcategories.some((sub) => sub.parent === category))
+                .filter(
+                  (category) =>
+                    !selectedSubcategories.some(
+                      (sub) => sub.parent === category,
+                    ),
+                )
                 .map((category) => (
-                  <div key={category} className="flex items-center bg-muted px-3 py-1 rounded-full text-sm">
-                    <span>{categoryFilters[category as keyof typeof categoryFilters]}</span>
+                  <div
+                    key={category}
+                    className="flex items-center bg-muted px-3 py-1 rounded-full text-sm"
+                  >
+                    <span>
+                      {
+                        categoryFilters[
+                          category as keyof typeof categoryFilters
+                        ]
+                      }
+                    </span>
                     <button
                       className="ml-2 focus:outline-none"
                       onClick={() => toggleCategory(category)}
@@ -638,8 +776,12 @@ export default function MenShopPage() {
                   </div>
                 ))}
               {selectedSubcategories.map((sub) => {
-                const categoryName = categoryFilters[sub.parent as keyof typeof categoryFilters]
-                const subcategoryName = getSubcategoryDisplayName(sub.parent, sub.key)
+                const categoryName =
+                  categoryFilters[sub.parent as keyof typeof categoryFilters];
+                const subcategoryName = getSubcategoryDisplayName(
+                  sub.parent,
+                  sub.key,
+                );
 
                 return (
                   <div
@@ -657,9 +799,14 @@ export default function MenShopPage() {
                       &times;
                     </button>
                   </div>
-                )
+                );
               })}
-              <Button variant="ghost" size="sm" onClick={clearFilters} className="text-xs">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearFilters}
+                className="text-xs"
+              >
                 Clear All
               </Button>
             </div>
@@ -668,11 +815,19 @@ export default function MenShopPage() {
           {filteredProducts.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12">
               <p className="text-lg font-medium mb-4">No products found</p>
-              <p className="text-muted-foreground mb-6">Try adjusting your filters or search criteria</p>
+              <p className="text-muted-foreground mb-6">
+                Try adjusting your filters or search criteria
+              </p>
               <Button onClick={clearFilters}>Clear Filters</Button>
             </div>
           ) : (
-            <div className={viewMode === "grid" ? "grid grid-cols-2 md:grid-cols-3 gap-4" : "space-y-4"}>
+            <div
+              className={
+                viewMode === "grid"
+                  ? "grid grid-cols-2 md:grid-cols-3 gap-4"
+                  : "space-y-4"
+              }
+            >
               {filteredProducts.map((product) => (
                 <Link key={product.id} href={`/product/${product.id}`}>
                   {viewMode === "grid" ? (
@@ -687,8 +842,12 @@ export default function MenShopPage() {
                         />
                       </div>
                       <CardContent className="p-3">
-                        <h3 className="font-medium text-sm line-clamp-2">{product.name}</h3>
-                        <p className="mt-1 font-medium text-sm">₹{product.price.toLocaleString("en-IN")}</p>
+                        <h3 className="font-medium text-sm line-clamp-2">
+                          {product.name}
+                        </h3>
+                        <p className="mt-1 font-medium text-sm">
+                          ₹{product.price.toLocaleString("en-IN")}
+                        </p>
                       </CardContent>
                     </Card>
                   ) : (
@@ -705,11 +864,21 @@ export default function MenShopPage() {
                         </div>
                         <CardContent className="p-3 flex-1">
                           <h3 className="font-medium">{product.name}</h3>
-                          <p className="mt-1 font-medium">₹{product.price.toLocaleString("en-IN")}</p>
+                          <p className="mt-1 font-medium">
+                            ₹{product.price.toLocaleString("en-IN")}
+                          </p>
                           <p className="mt-2 text-sm text-muted-foreground">
-                            {categoryFilters[product.category as keyof typeof categoryFilters]}
+                            {
+                              categoryFilters[
+                                product.category as keyof typeof categoryFilters
+                              ]
+                            }
                             {product.subcategory && " - "}
-                            {product.subcategory && getSubcategoryDisplayName(product.category, product.subcategory)}
+                            {product.subcategory &&
+                              getSubcategoryDisplayName(
+                                product.category,
+                                product.subcategory,
+                              )}
                           </p>
                         </CardContent>
                       </div>
@@ -722,5 +891,5 @@ export default function MenShopPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

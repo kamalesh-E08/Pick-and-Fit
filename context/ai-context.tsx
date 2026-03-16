@@ -7,12 +7,22 @@ import React, {
   useCallback,
   useEffect,
 } from "react";
-import AIAssistantService, {
+import {
   ConversationMessage,
   AIResponse,
 } from "@/lib/services/ai-assistant-service";
 import { useAuth } from "./auth-context";
 import { useCart } from "./cart-context";
+
+const GUEST_HISTORY_KEY = "pickfit_ai_guest_history";
+
+interface AIHistoryResponse {
+  messages?: Array<{
+    role: "user" | "assistant";
+    content: string;
+    timestamp?: string;
+  }>;
+}
 
 interface AIContextType {
   messages: ConversationMessage[];
@@ -56,6 +66,64 @@ export const AIProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, []);
 
+  useEffect(() => {
+    if (!isInitialized || auth?.isLoading) return;
+
+    const loadHistory = async () => {
+      setError(null);
+
+      const userEmail = auth?.user?.email;
+      if (!userEmail) {
+        try {
+          const stored = localStorage.getItem(GUEST_HISTORY_KEY);
+          if (!stored) {
+            setMessages([]);
+            return;
+          }
+
+          const parsed = JSON.parse(stored) as ConversationMessage[];
+          const hydratedMessages = parsed.map((msg) => ({
+            ...msg,
+            timestamp: msg.timestamp ? new Date(msg.timestamp) : undefined,
+          }));
+          setMessages(hydratedMessages);
+        } catch {
+          setMessages([]);
+        }
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          `/api/ai-assistant?mode=history&userEmail=${encodeURIComponent(userEmail)}`,
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to load AI conversation history");
+        }
+
+        const data: AIHistoryResponse = await response.json();
+        const history = (data.messages ?? []).map((msg) => ({
+          role: msg.role,
+          content: msg.content,
+          timestamp: msg.timestamp ? new Date(msg.timestamp) : undefined,
+        }));
+
+        setMessages(history);
+      } catch (err) {
+        console.warn("Failed to load AI history:", err);
+        setMessages([]);
+      }
+    };
+
+    loadHistory();
+  }, [auth?.isLoading, auth?.user?.email, isInitialized]);
+
+  useEffect(() => {
+    if (!isInitialized || auth?.user?.email) return;
+    localStorage.setItem(GUEST_HISTORY_KEY, JSON.stringify(messages));
+  }, [auth?.user?.email, isInitialized, messages]);
+
   const sendMessage = useCallback(
     async (message: string) => {
       if (!message.trim()) return;
@@ -73,12 +141,6 @@ export const AIProvider: React.FC<{ children: React.ReactNode }> = ({
 
         setMessages((prev) => [...prev, userMessage]);
 
-        // Create AI service instance
-        const aiService = new AIAssistantService({
-          useOllama: process.env.NEXT_PUBLIC_USE_OLLAMA === "true",
-          huggingFaceToken: process.env.NEXT_PUBLIC_HUGGING_FACE_TOKEN,
-        });
-
         // Get user context for better recommendations
         const userContext = {
           email: auth?.user?.email,
@@ -87,18 +149,38 @@ export const AIProvider: React.FC<{ children: React.ReactNode }> = ({
           savedProducts: 0, // Could be fetched from DB
         };
 
-        // Get AI response
-        const response = await aiService.chat(message, userContext);
+        const response = await fetch("/api/ai-assistant", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            message,
+            userEmail: auth?.user?.email,
+            conversationHistory: messages.map((item) => ({
+              role: item.role,
+              content: item.content,
+            })),
+            userContext,
+          }),
+        });
+
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          throw new Error(data?.error || "Failed to get AI response");
+        }
+
+        const result: AIResponse = await response.json();
 
         // Add assistant message to history
         const assistantMessage: ConversationMessage = {
           role: "assistant",
-          content: response.message,
+          content: result.message,
           timestamp: new Date(),
         };
 
         setMessages((prev) => [...prev, assistantMessage]);
-        setLastResponse(response);
+        setLastResponse(result);
       } catch (err) {
         const errorMessage =
           err instanceof Error ? err.message : "Failed to get AI response";
@@ -123,7 +205,21 @@ export const AIProvider: React.FC<{ children: React.ReactNode }> = ({
     setMessages([]);
     setError(null);
     setLastResponse(undefined);
-  }, []);
+
+    if (!auth?.user?.email) {
+      localStorage.removeItem(GUEST_HISTORY_KEY);
+      return;
+    }
+
+    fetch(
+      `/api/ai-assistant?userEmail=${encodeURIComponent(auth.user.email)}`,
+      {
+        method: "DELETE",
+      },
+    ).catch((err) => {
+      console.warn("Failed to clear persisted AI history:", err);
+    });
+  }, [auth?.user?.email]);
 
   const value: AIContextType = {
     messages,
