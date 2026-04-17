@@ -165,11 +165,32 @@ When the user asks about specific products, try to identify them from your knowl
       );
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(`Hugging Face API error: ${JSON.stringify(errorData)}`);
+        const responseText = await response.text().catch(() => "");
+        let responseJson: unknown = null;
+        try {
+          responseJson = JSON.parse(responseText);
+        } catch {
+          responseJson = responseText;
+        }
+
+        const errorDetails =
+          responseJson && typeof responseJson === "object"
+            ? JSON.stringify(responseJson)
+            : responseText || response.statusText;
+
+        throw new Error(
+          `Hugging Face API error: ${response.status} ${response.statusText} - ${errorDetails}`,
+        );
       }
 
-      const data = await response.json();
+      let data: any;
+      const responseText = await response.text().catch(() => "");
+      try {
+        data = JSON.parse(responseText);
+      } catch {
+        data = responseText;
+      }
+
       let result = "";
 
       if (Array.isArray(data) && data.length > 0) {
