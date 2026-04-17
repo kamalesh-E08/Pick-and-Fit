@@ -6,11 +6,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import Razorpay from "razorpay";
 
-// Initialize Razorpay instance
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID || "",
-  key_secret: process.env.RAZORPAY_KEY_SECRET || "",
-});
+function getRazorpay() {
+  const keyId = process.env.RAZORPAY_KEY_ID;
+  const keySecret = process.env.RAZORPAY_KEY_SECRET;
+
+  if (!keyId || !keySecret) {
+    throw new Error(
+      "Razorpay configuration missing: set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET",
+    );
+  }
+
+  return new Razorpay({
+    key_id: keyId,
+    key_secret: keySecret,
+  });
+}
 
 export interface CreateOrderRequest {
   orderId: string;
@@ -73,6 +83,7 @@ export async function POST(request: NextRequest) {
       ...(body.customerEmail && { customer_notify: 1 }), // Send SMS/Email to customer
     };
 
+    const razorpay = getRazorpay();
     const order = (await razorpay.orders.create(
       options,
     )) as RazorpayOrderResponse;

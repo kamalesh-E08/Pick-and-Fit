@@ -10,11 +10,21 @@ import Razorpay from "razorpay";
 import crypto from "crypto";
 import { sendPaymentReceiptEmail } from "@/lib/services/email";
 
-// Initialize Razorpay
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID || "",
-  key_secret: process.env.RAZORPAY_KEY_SECRET || "",
-});
+function getRazorpay() {
+  const keyId = process.env.RAZORPAY_KEY_ID;
+  const keySecret = process.env.RAZORPAY_KEY_SECRET;
+
+  if (!keyId || !keySecret) {
+    throw new Error(
+      "Razorpay configuration missing: set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET",
+    );
+  }
+
+  return new Razorpay({
+    key_id: keyId,
+    key_secret: keySecret,
+  });
+}
 
 interface PaymentVerification {
   orderId: string;
@@ -112,6 +122,7 @@ export async function POST(request: NextRequest) {
 
       try {
         // Fetch payment details from Razorpay API
+        const razorpay = getRazorpay();
         const payment = await razorpay.payments.fetch(body.razorpayPaymentId);
 
         // Verify payment status
