@@ -50,12 +50,11 @@ export const AIProvider: React.FC<{ children: React.ReactNode }> = ({
   // Initialize AI service
   useEffect(() => {
     try {
-      const token = process.env.NEXT_PUBLIC_HUGGING_FACE_TOKEN;
       const useOllama = process.env.NEXT_PUBLIC_USE_OLLAMA === "true";
 
-      if (!token && !useOllama) {
+      if (!useOllama) {
         console.warn(
-          "No AI service configured. Please set environment variables.",
+          "AI is configured to use Hugging Face. Ensure HUGGING_FACE_TOKEN is set on the server.",
         );
       }
 

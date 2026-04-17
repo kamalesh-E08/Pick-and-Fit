@@ -15,7 +15,7 @@ import Link from "next/link";
 
 declare global {
   interface Window {
-    Razorpay: any;
+    Stripe?: any;
   }
 }
 
@@ -34,12 +34,6 @@ interface OrderData {
   }>;
 }
 
-interface RazorpayResponse {
-  razorpay_payment_id: string;
-  razorpay_order_id: string;
-  razorpay_signature: string;
-}
-
 export default function PaymentPage() {
   const router = useRouter();
   const { user, isLoading: authLoading } = useAuth();
@@ -51,18 +45,19 @@ export default function PaymentPage() {
     "idle" | "processing" | "success" | "failed"
   >("idle");
   const [transactionId, setTransactionId] = useState("");
-  const [razorpayReady, setRazorpayReady] = useState(false);
+  const [stripeReady, setStripeReady] = useState(false);
+  const [isVerifyingSession, setIsVerifyingSession] = useState(false);
 
-  // Load Razorpay script
+  // Load Stripe.js script
   useEffect(() => {
     const script = document.createElement("script");
-    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.src = "https://js.stripe.com/v3/";
     script.async = true;
     script.onload = () => {
-      setRazorpayReady(true);
+      setStripeReady(true);
     };
     script.onerror = () => {
-      console.error("Failed to load Razorpay script");
+      console.error("Failed to load Stripe script");
       toast.error("Failed to load payment gateway");
     };
     document.body.appendChild(script);
@@ -81,6 +76,16 @@ export default function PaymentPage() {
 
     // Get order data from localStorage or query params
     const storedOrder = localStorage.getItem("pendingOrder");
+    const params =
+      typeof window !== "undefined"
+        ? new URLSearchParams(window.location.search)
+        : null;
+    const orderIdFromQuery = params?.get("orderId");
+    const amountFromQuery = params?.get("amount");
+    const success = params?.get("success") === "true";
+    const sessionId = params?.get("session_id");
+    const cancel = params?.get("cancel") === "true";
+
     if (storedOrder) {
       const parsed = JSON.parse(storedOrder);
       setOrderData({
@@ -91,149 +96,104 @@ export default function PaymentPage() {
         tax: parsed.tax,
         items: parsed.items || [],
       });
-    } else {
-      // Safely get query params from URL
-      if (typeof window !== "undefined") {
-        const params = new URLSearchParams(window.location.search);
-        const orderId = params.get("orderId");
-        const amount = params.get("amount");
-        if (orderId && amount) {
-          setOrderData({
-            orderId,
-            amount: parseFloat(amount),
-            items: [],
-          });
-        } else {
-          toast.error("No order information found");
-          router.push("/cart");
-        }
-      }
+    } else if (orderIdFromQuery && amountFromQuery) {
+      setOrderData({
+        orderId: orderIdFromQuery,
+        amount: parseFloat(amountFromQuery),
+        items: [],
+      });
+    } else if (!success) {
+      toast.error("No order information found");
+      router.push("/cart");
+      return;
+    }
+
+    if (success && sessionId && orderIdFromQuery) {
+      verifyStripeCheckoutSession(sessionId, orderIdFromQuery);
+    } else if (cancel) {
+      toast.error("Payment was cancelled. Please try again.");
     }
   }, [authLoading, user, router]);
 
   /**
-   * Create order in Razorpay
+   * Create Stripe checkout session
    */
-  const createRazorpayOrder = async (): Promise<string | null> => {
+  const createStripeCheckoutSession = async (): Promise<string | null> => {
     try {
       if (!orderData) {
         toast.error("No order data available");
         return null;
       }
 
-      // Amount in paise (multiply by 100 to convert from rupees)
-      const amountInPaise = Math.round(orderData.amount * 100);
-
-      const response = await fetch("/api/razorpay/create-order", {
+      const response = await fetch("/api/stripe/create-checkout-session", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
           orderId: orderData.orderId,
-          amount: amountInPaise,
           currency: "INR",
-          description: `Order ${orderData.orderId} - Pick and Fit`,
-          customerEmail: user?.email,
-          customerPhone: user?.phone,
-          notes: {
-            userId: user?.id || "guest",
-            itemCount: orderData.items.length.toString(),
-          },
         }),
       });
 
       const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(data.error || "Failed to create order");
+        throw new Error(data.error || "Failed to create payment session");
       }
 
-      return data.orderId; // Razorpay order ID
+      return data.sessionId;
     } catch (error) {
       const errorMessage =
-        error instanceof Error ? error.message : "Failed to create order";
-      console.error("Order creation error:", error);
+        error instanceof Error
+          ? error.message
+          : "Failed to create payment session";
+      console.error("Stripe session creation error:", error);
       toast.error(errorMessage);
       return null;
     }
   };
 
-  /**
-   * Handle Razorpay payment success
-   */
-  const handlePaymentSuccess = async (response: RazorpayResponse) => {
+  const verifyStripeCheckoutSession = async (
+    sessionId: string,
+    orderId: string,
+  ) => {
     try {
-      setIsProcessing(true);
+      setIsVerifyingSession(true);
       setPaymentStatus("processing");
 
-      // Verify payment on backend
-      const verifyResponse = await fetch("/api/process-payment", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          orderId: orderData?.orderId,
-          razorpayPaymentId: response.razorpay_payment_id,
-          razorpayOrderId: response.razorpay_order_id,
-          razorpaySignature: response.razorpay_signature,
-          amount: orderData?.amount,
-          userEmail: user?.email,
-        }),
-      });
+      const response = await fetch(
+        `/api/stripe/verify-checkout-session?sessionId=${encodeURIComponent(
+          sessionId,
+        )}&orderId=${encodeURIComponent(orderId)}`,
+      );
+      const result = await response.json();
 
-      const result = await verifyResponse.json();
-
-      if (verifyResponse.ok) {
-        setPaymentStatus("success");
-        setTransactionId(response.razorpay_payment_id);
-        toast.success("Payment successful!");
-
-        // Clear localStorage and cart
-        localStorage.removeItem("pendingOrder");
-        clearCart();
-
-        // Redirect to order tracking
-        setTimeout(() => {
-          router.push(`/track-order?orderId=${orderData?.orderId}`);
-        }, 2000);
-      } else {
-        throw new Error(result.message || "Payment verification failed");
+      if (!response.ok) {
+        throw new Error(result.error || "Payment verification failed");
       }
+
+      setPaymentStatus("success");
+      setTransactionId(result.paymentId || "");
+      toast.success("Payment successful!");
+      localStorage.removeItem("pendingOrder");
+      clearCart();
+
+      setTimeout(() => {
+        router.push(`/track-order?orderId=${orderId}`);
+      }, 2000);
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Payment verification failed";
-      console.error("Payment verification error:", error);
+      console.error("Stripe payment verification error:", error);
       setPaymentStatus("failed");
       toast.error(errorMessage);
     } finally {
-      setIsProcessing(false);
+      setIsVerifyingSession(false);
     }
   };
 
-  /**
-   * Handle Razorpay payment error
-   */
-  const handlePaymentError = (error: any) => {
-    console.error("Payment error:", error);
-    setPaymentStatus("failed");
-    setIsProcessing(false);
-
-    if (error.code === "PAYMENT_AUTHORIZATION_FAILED") {
-      toast.error("Payment authorization failed. Please try again.");
-    } else if (error.code === "BAD_REQUEST_ERROR") {
-      toast.error("Invalid payment request. Please check your details.");
-    } else {
-      toast.error(error.description || "Payment failed. Please try again.");
-    }
-  };
-
-  /**
-   * Initiate Razorpay payment
-   */
   const initiatePayment = async () => {
-    if (!orderData || !razorpayReady) {
+    if (!orderData || !stripeReady) {
       toast.error("Payment system not ready. Please refresh and try again.");
       return;
     }
@@ -241,49 +201,29 @@ export default function PaymentPage() {
     setIsProcessing(true);
 
     try {
-      // Create Razorpay order first
-      const razorpayOrderId = await createRazorpayOrder();
-
-      if (!razorpayOrderId) {
+      const sessionId = await createStripeCheckoutSession();
+      if (!sessionId) {
         setIsProcessing(false);
         return;
       }
 
-      // Initialize Razorpay checkout
-      const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID, // Public key from env
-        order_id: razorpayOrderId, // Razorpay order ID
-        amount: Math.round(orderData.amount * 100), // Amount in paise
-        currency: "INR",
-        name: "Pick and Fit",
-        description: `Order ${orderData.orderId}`,
-        image: "/logo.png", // Your company logo
-        prefill: {
-          name: user?.name || "",
-          email: user?.email || "",
-          contact: user?.phone || "",
-        },
-        notes: {
-          orderId: orderData.orderId,
-        },
-        theme: {
-          color: "#1a1a1a",
-        },
-        handler: handlePaymentSuccess,
-        modal: {
-          ondismiss: () => {
-            setIsProcessing(false);
-            toast.error("Payment cancelled");
-          },
-        },
-      };
+      const stripe = window.Stripe?.(
+        process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
+      );
+      if (!stripe) {
+        throw new Error("Stripe.js is not available");
+      }
 
-      const razorpay = new window.Razorpay(options);
-      razorpay.open();
+      const { error } = await stripe.redirectToCheckout({ sessionId });
+      if (error) {
+        throw error;
+      }
     } catch (error) {
       console.error("Payment initiation error:", error);
       setIsProcessing(false);
-      toast.error("Failed to initiate payment");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to initiate payment",
+      );
     }
   };
 
@@ -401,7 +341,7 @@ export default function PaymentPage() {
                   </div>
                 )}
 
-                {!razorpayReady && (
+                {!stripeReady && (
                   <div className="bg-yellow-50 border border-yellow-200 rounded p-3 text-sm text-yellow-800">
                     Loading payment gateway...
                   </div>
@@ -469,9 +409,8 @@ export default function PaymentPage() {
                   </h3>
                   <div className="bg-blue-50 border border-blue-200 rounded p-4">
                     <p className="text-sm text-blue-800">
-                      💳 You will be redirected to Razorpay's secure payment
-                      gateway. We accept all major credit cards, debit cards,
-                      UPI, and net banking methods.
+                      💳 You will be redirected to Stripe's secure payment
+                      gateway. We accept all major credit and debit cards.
                     </p>
                   </div>
                 </div>
@@ -479,7 +418,11 @@ export default function PaymentPage() {
                 <Button
                   onClick={initiatePayment}
                   disabled={
-                    isProcessing || !razorpayReady || !orderData || !user
+                    isProcessing ||
+                    isVerifyingSession ||
+                    !stripeReady ||
+                    !orderData ||
+                    !user
                   }
                   size="lg"
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white"
