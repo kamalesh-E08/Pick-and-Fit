@@ -32,6 +32,37 @@ export default function ProfilePage() {
   const router = useRouter();
   const { metrics, isLoading: metricsLoading, fetchMetrics } = useBodyMetrics();
 
+  const profileFields = [
+    {
+      label: "Height",
+      filled: !!metrics?.estimatedHeight,
+    },
+    {
+      label: "Body type",
+      filled: !!metrics?.estimatedBodyType,
+    },
+    {
+      label: "Skin tone",
+      filled: !!metrics?.skinTone,
+    },
+    {
+      label: "Waist size",
+      filled: !!metrics?.estimatedWaistSize,
+    },
+    {
+      label: "Bust size",
+      filled: !!metrics?.estimatedBustSize,
+    },
+  ];
+
+  const completedItems = profileFields.filter((field) => field.filled).length;
+  const completionPercent = Math.round(
+    (completedItems / profileFields.length) * 100,
+  );
+  const missingFields = profileFields
+    .filter((field) => !field.filled)
+    .map((field) => field.label);
+
   useEffect(() => {
     if (user?.email && !metrics && !metricsLoading) {
       fetchMetrics(user.email);
@@ -82,6 +113,12 @@ export default function ProfilePage() {
     );
   }
 
+  const progressRadius = 38;
+  const progressStroke = 6;
+  const progressCircumference = 2 * Math.PI * progressRadius;
+  const progressOffset =
+    progressCircumference - (completionPercent / 100) * progressCircumference;
+
   return (
     <div className="container py-8 px-4 max-w-4xl">
       <div className="flex items-center justify-between mb-6">
@@ -106,6 +143,69 @@ export default function ProfilePage() {
           </Button>
         </div>
       </div>
+
+      <Card className="border-border bg-card/90 p-5 mb-6">
+        <div className="flex flex-col gap-6 md:flex-row md:items-center">
+          <div className="relative h-28 w-28 rounded-full bg-muted/70 p-3">
+            <svg
+              className="absolute inset-0 h-full w-full"
+              viewBox="0 0 100 100"
+              fill="none"
+            >
+              <circle
+                cx="50"
+                cy="50"
+                r="38"
+                stroke="rgba(148,163,184,0.25)"
+                strokeWidth="6"
+              />
+              <circle
+                cx="50"
+                cy="50"
+                r="38"
+                stroke="#ec4899"
+                strokeWidth="6"
+                strokeDasharray={progressCircumference}
+                strokeDashoffset={progressOffset}
+                strokeLinecap="round"
+                transform="rotate(-90 50 50)"
+              />
+            </svg>
+            <div className="absolute inset-0 grid place-items-center">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-sm">
+                <User className="h-8 w-8 text-primary" />
+              </div>
+            </div>
+          </div>
+          <div className="flex-1 space-y-3">
+            <p className="text-sm text-muted-foreground">
+              A more complete profile helps AI suggestions, fit predictions, and
+              curated recommendations.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {missingFields.slice(0, 3).map((field) => (
+                <span
+                  key={field}
+                  className="rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-medium text-primary"
+                >
+                  {field}
+                </span>
+              ))}
+            </div>
+            <div className="flex items-center gap-3">
+              <p className="text-lg font-semibold text-foreground">
+                {completionPercent}% complete
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Fill out your profile to unlock better recommendations.
+              </p>
+            </div>
+            <Button variant="outline" asChild>
+              <Link href="/profile/edit">Complete your profile</Link>
+            </Button>
+          </div>
+        </div>
+      </Card>
 
       <div className="grid gap-6">
         <Card>

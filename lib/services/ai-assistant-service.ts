@@ -135,6 +135,12 @@ When the user asks about specific products, try to identify them from your knowl
     userMessage: string,
     systemPrompt: string,
   ): Promise<string> {
+    if (!this.huggingFaceToken) {
+      throw new Error(
+        "Hugging Face token is not configured. Set HUGGING_FACE_TOKEN in your environment.",
+      );
+    }
+
     try {
       const conversationContext = this.formatConversationContext();
       const fullPrompt = `${systemPrompt}\n\nConversation History:\n${conversationContext}\n\nUser: ${userMessage}\n\nAssistant:`;
@@ -164,17 +170,26 @@ When the user asks about specific products, try to identify them from your knowl
       }
 
       const data = await response.json();
-      if (Array.isArray(data) && data[0]?.generated_text) {
-        const result = data[0].generated_text;
-        // Extract assistant response (after the prompt)
-        const assistantIndex = result.lastIndexOf("Assistant:");
-        if (assistantIndex !== -1) {
-          return result.substring(assistantIndex + 10).trim();
-        }
-        return result.trim();
+      let result = "";
+
+      if (Array.isArray(data) && data.length > 0) {
+        result = data[0]?.generated_text || data[0]?.text || "";
+      } else if (data && typeof data === "object") {
+        result = data.generated_text || data.text || "";
+      } else if (typeof data === "string") {
+        result = data;
       }
 
-      return "I couldn't generate a response. Please try again.";
+      if (!result) {
+        return "I couldn't generate a response. Please try again.";
+      }
+
+      const assistantIndex = result.lastIndexOf("Assistant:");
+      if (assistantIndex !== -1) {
+        return result.substring(assistantIndex + 10).trim();
+      }
+
+      return result.trim();
     } catch (error) {
       console.error("Hugging Face error:", error);
       throw error;
@@ -211,6 +226,11 @@ When the user asks about specific products, try to identify them from your knowl
         return await this.generateWithHuggingFace(userMessage, systemPrompt);
       } catch (hfError) {
         console.warn("Hugging Face failed, falling back to Ollama:", hfError);
+        if (!this.ollamaUrl) {
+          throw new Error(
+            "Hugging Face failed and Ollama is not available. Please configure at least one AI provider.",
+          );
+        }
         return await this.generateWithOllama(userMessage, systemPrompt);
       }
     }

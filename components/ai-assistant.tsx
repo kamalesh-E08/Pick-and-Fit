@@ -219,18 +219,33 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                 <div
                   key={idx}
                   className={cn(
-                    "flex gap-3",
+                    "flex gap-3 items-end",
                     msg.role === "user" ? "justify-end" : "justify-start",
                   )}
                 >
+                  {msg.role === "assistant" && (
+                    <div className="flex-none">
+                      <div className="h-9 w-9 flex items-center justify-center rounded-full bg-primary/10 text-primary shadow-sm">
+                        <MessageCircle className="h-5 w-5" />
+                      </div>
+                    </div>
+                  )}
                   <div
                     className={cn(
-                      "max-w-xs sm:max-w-md px-4 py-2.5 rounded-2xl shadow-sm",
+                      "max-w-xs sm:max-w-md px-4 py-3 rounded-3xl shadow-sm",
                       msg.role === "user"
-                        ? "bg-primary text-primary-foreground rounded-br-md"
-                        : "bg-card border border-border text-card-foreground rounded-bl-md",
+                        ? "bg-primary text-primary-foreground rounded-br-none rounded-tl-3xl rounded-tr-3xl"
+                        : "bg-card border border-border text-card-foreground rounded-bl-none rounded-tl-3xl rounded-tr-3xl",
                     )}
                   >
+                    {msg.role === "assistant" && (
+                      <div className="mb-2 flex items-center gap-2 text-xs text-muted-foreground">
+                        <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-muted/70 text-muted-foreground">
+                          A
+                        </span>
+                        <span>AI Assistant</span>
+                      </div>
+                    )}
                     {msg.role === "user" ? (
                       <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">
                         {msg.content}
@@ -241,7 +256,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                     {msg.timestamp && (
                       <p
                         className={cn(
-                          "text-xs mt-1 opacity-80",
+                          "text-xs mt-2 opacity-80",
                           msg.role === "user"
                             ? "text-primary-foreground"
                             : "text-muted-foreground",

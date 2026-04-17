@@ -40,32 +40,19 @@ export default function SignInPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (!response.ok) {
+      const success = await signIn(email, password);
+      if (!success) {
         setError("Invalid email or password");
-        setIsLoading(false);
         return;
       }
 
-      const data = await response.json();
-      const userData = data.user;
-      const tokens = data.tokens;
-
-      // Store user data and tokens
-      localStorage.setItem("pickfit_user", JSON.stringify(userData));
-      if (tokens?.accessToken) {
-        localStorage.setItem("accessToken", tokens.accessToken);
-      }
-      if (tokens?.refreshToken) {
-        localStorage.setItem("refreshToken", tokens.refreshToken);
+      const storedUser = localStorage.getItem("pickfit_user");
+      const userData = storedUser ? JSON.parse(storedUser) : null;
+      if (!userData) {
+        setError("Unable to load user profile after sign-in. Please refresh.");
+        return;
       }
 
-      // Redirect based on role
       if (userData.role === "admin") {
         router.push("/admin");
       } else if (userData.role === "seller") {

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Suspense } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import AIAssistant from "@/components/ai-assistant";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +9,36 @@ import { MessageCircle, Lightbulb, Zap, Users } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
+interface AIServiceStatus {
+  status: string;
+  huggingFaceConfigured: boolean;
+  ollamaAvailable: boolean;
+  primaryService: string;
+  error?: string;
+}
+
 export default function AIAssistantPage() {
+  const [serviceStatus, setServiceStatus] = useState<AIServiceStatus | null>(null);
+  const [statusError, setStatusError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchStatus() {
+      try {
+        const res = await fetch("/api/ai-assistant");
+        if (!res.ok) {
+          throw new Error("Failed to load AI service status");
+        }
+        const data = (await res.json()) as AIServiceStatus;
+        setServiceStatus(data);
+      } catch (err) {
+        setStatusError(
+          err instanceof Error ? err.message : "Unable to determine AI status",
+        );
+      }
+    }
+
+    fetchStatus();
+  }, []);
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 py-8">
       <div className="container mx-auto px-4 max-w-6xl">
@@ -77,6 +106,45 @@ export default function AIAssistantPage() {
         </div>
 
         {/* Main Content */}
+        {serviceStatus ? (
+          <div
+            className={`rounded-2xl border px-4 py-3 mb-6 text-sm ${
+              serviceStatus.status !== "ok"
+                ? "bg-amber-50 border-amber-200 text-amber-900"
+                : serviceStatus.huggingFaceConfigured
+                ? "bg-emerald-50 border-emerald-200 text-emerald-900"
+                : "bg-sky-50 border-sky-200 text-sky-900"
+            }`}
+          >
+            <div className="flex flex-col gap-1">
+              <p className="font-medium">
+                AI service status: {serviceStatus.status === "ok" ? "Available" : "Unavailable"}.
+              </p>
+              <p>
+                {serviceStatus.primaryService === "ollama"
+                  ? "Running on local Ollama."
+                  : "Running on Hugging Face cloud."}
+              </p>
+              {!serviceStatus.huggingFaceConfigured && (
+                <p>
+                  Hugging Face is not configured. Add your
+                  <code className="mx-1 rounded bg-muted px-1 py-0.5 text-xs">
+                    HUGGING_FACE_TOKEN
+                  </code>
+                  in Vercel or enable local Ollama.
+                </p>
+              )}
+            </div>
+          </div>
+        ) : statusError ? (
+          <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900 mb-6">
+            {statusError}
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-border bg-card/80 px-4 py-3 text-sm text-muted-foreground mb-6">
+            Checking AI service status...
+          </div>
+        )}
         <Tabs defaultValue="chat" className="space-y-4">
           <TabsList className="grid w-full grid-cols-2 bg-muted border border-border">
             <TabsTrigger value="chat">AI Chat</TabsTrigger>

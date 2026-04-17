@@ -148,6 +148,7 @@ export const AIProvider: React.FC<{ children: React.ReactNode }> = ({
           savedProducts: 0, // Could be fetched from DB
         };
 
+        const currentHistory = [...messages, userMessage];
         const response = await fetch("/api/ai-assistant", {
           method: "POST",
           headers: {
@@ -156,7 +157,7 @@ export const AIProvider: React.FC<{ children: React.ReactNode }> = ({
           body: JSON.stringify({
             message,
             userEmail: auth?.user?.email,
-            conversationHistory: messages.map((item) => ({
+            conversationHistory: currentHistory.map((item) => ({
               role: item.role,
               content: item.content,
             })),
@@ -197,7 +198,7 @@ export const AIProvider: React.FC<{ children: React.ReactNode }> = ({
         setIsLoading(false);
       }
     },
-    [auth?.user?.email, cart?.items?.length],
+    [auth?.user?.email, cart?.items?.length, messages],
   );
 
   const clearHistory = useCallback(() => {
