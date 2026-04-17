@@ -37,6 +37,8 @@ export interface IUser extends Document {
   email: string;
   password: string;
   role: "customer" | "admin" | "seller" | "delivery";
+  resetPasswordToken?: string;
+  resetPasswordExpires?: Date;
   photoId?: string; // Reference to stored photo
   bodyMetrics?: IBodyMetrics;
   addresses: IAddress[];
@@ -104,6 +106,8 @@ const UserSchema = new Schema<IUser>(
       default: "customer",
       index: true,
     },
+    resetPasswordToken: { type: String, index: true },
+    resetPasswordExpires: { type: Date },
     photoId: { type: String },
     bodyMetrics: { type: BodyMetricsSchema },
     addresses: [AddressSchema],

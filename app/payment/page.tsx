@@ -25,10 +25,12 @@ interface OrderData {
   subtotal?: number;
   shippingFee?: number;
   tax?: number;
+  tryOnFee?: number;
   items: Array<{
     name: string;
     quantity: number;
     price: number;
+    tryOnFee?: number;
   }>;
 }
 
@@ -392,6 +394,13 @@ export default function PaymentPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
+                {!orderData && (
+                  <div className="bg-red-50 border border-red-200 rounded p-3 text-sm text-red-800 flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    No order data found. Please go back to your cart.
+                  </div>
+                )}
+
                 {!razorpayReady && (
                   <div className="bg-yellow-50 border border-yellow-200 rounded p-3 text-sm text-yellow-800">
                     Loading payment gateway...
@@ -434,6 +443,14 @@ export default function PaymentPage() {
                         <span className="text-gray-600">Tax:</span>
                         <span className="font-semibold">
                           ₹{orderData.tax.toFixed(2)}
+                        </span>
+                      </div>
+                    )}
+                    {orderData?.tryOnFee != null && orderData.tryOnFee > 0 && (
+                      <div className="flex justify-between text-blue-700">
+                        <span>Virtual Try-On Fee:</span>
+                        <span className="font-semibold">
+                          ₹{orderData.tryOnFee.toFixed(2)}
                         </span>
                       </div>
                     )}
@@ -539,6 +556,14 @@ export default function PaymentPage() {
                       ₹{orderData?.tax?.toFixed(2) || "0.00"}
                     </span>
                   </div>
+                  {orderData?.tryOnFee != null && orderData.tryOnFee > 0 && (
+                    <div className="flex justify-between text-sm text-blue-700">
+                      <span>Try-On Fee:</span>
+                      <span className="font-semibold">
+                        ₹{orderData.tryOnFee.toFixed(2)}
+                      </span>
+                    </div>
+                  )}
                   <div className="border-t pt-2 flex justify-between">
                     <span className="font-bold">Total:</span>
                     <span className="font-bold text-blue-600 text-lg">

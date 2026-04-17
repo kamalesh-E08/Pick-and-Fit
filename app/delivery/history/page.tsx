@@ -12,8 +12,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Search,
-  Filter,
-  Download,
 } from "lucide-react";
 
 interface HistoryItem {
@@ -21,8 +19,8 @@ interface HistoryItem {
   orderId: {
     orderNumber: string;
     shippingAddress: {
-      fullName: string;
-      addressLine: string;
+      name: string;
+      street: string;
       city: string;
     };
   };
@@ -117,7 +115,7 @@ export default function DeliveryHistoryPage() {
       ? item.orderId.orderNumber
           .toLowerCase()
           .includes(searchQuery.toLowerCase()) ||
-        item.orderId.shippingAddress.fullName
+        item.orderId.shippingAddress.name
           .toLowerCase()
           .includes(searchQuery.toLowerCase())
       : true,
@@ -205,11 +203,6 @@ export default function DeliveryHistoryPage() {
                 <option value="delivered">Delivered</option>
                 <option value="failed">Failed</option>
               </select>
-
-              <button className="flex items-center gap-2 px-4 py-2 border rounded-lg hover:bg-gray-50">
-                <Download className="w-4 h-4" />
-                Export
-              </button>
             </div>
           </div>
         </div>
@@ -281,7 +274,7 @@ export default function DeliveryHistoryPage() {
                         <td className="px-6 py-4">
                           <div>
                             <p className="font-medium text-gray-900">
-                              {item.orderId.shippingAddress.fullName}
+                              {item.orderId.shippingAddress.name}
                             </p>
                             <p className="text-sm text-gray-500">
                               {item.orderId.shippingAddress.city}
@@ -290,7 +283,7 @@ export default function DeliveryHistoryPage() {
                         </td>
                         <td className="px-6 py-4">
                           <p className="text-sm text-gray-900">
-                            {item.orderId.shippingAddress.addressLine.substring(
+                            {item.orderId.shippingAddress.street.substring(
                               0,
                               30,
                             )}

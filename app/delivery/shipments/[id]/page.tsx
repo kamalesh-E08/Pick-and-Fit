@@ -7,7 +7,6 @@ import {
   MapPin,
   Clock,
   Phone,
-  Mail,
   CheckCircle,
   AlertCircle,
   Camera,
@@ -23,16 +22,16 @@ interface ShipmentDetails {
     _id: string;
     orderNumber: string;
     shippingAddress: {
-      fullName: string;
+      name: string;
       phone: string;
-      addressLine: string;
+      street: string;
       city: string;
       state: string;
-      pincode: string;
+      zipCode: string;
     };
     items: Array<{
       productId: string;
-      name: string;
+      productName: string;
       quantity: number;
       price: number;
     }>;
@@ -40,13 +39,15 @@ interface ShipmentDetails {
   status: string;
   estimatedDelivery: string;
   currentLocation: string;
-  trackingEvents: Array<{
+  events: Array<{
     status: string;
     location: string;
     timestamp: Date;
-    note: string;
+    description: string;
   }>;
-  deliveryProof?: string;
+  deliveryProof?: {
+    imageUrl?: string;
+  };
 }
 
 export default function ShipmentDetailPage() {
@@ -57,7 +58,6 @@ export default function ShipmentDetailPage() {
   const [shipment, setShipment] = useState<ShipmentDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
-  const [newStatus, setNewStatus] = useState("");
   const [newLocation, setNewLocation] = useState("");
   const [note, setNote] = useState("");
   const [proofImage, setProofImage] = useState<string | null>(null);
@@ -188,13 +188,17 @@ export default function ShipmentDetailPage() {
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
       pending: "bg-yellow-100 text-yellow-800 border-yellow-300",
-      "in-transit": "bg-blue-100 text-blue-800 border-blue-300",
-      "out-for-delivery": "bg-purple-100 text-purple-800 border-purple-300",
+      picked: "bg-sky-100 text-sky-800 border-sky-300",
+      in_transit: "bg-blue-100 text-blue-800 border-blue-300",
+      out_for_delivery: "bg-purple-100 text-purple-800 border-purple-300",
       delivered: "bg-green-100 text-green-800 border-green-300",
       failed: "bg-red-100 text-red-800 border-red-300",
     };
     return colors[status] || "bg-gray-100 text-gray-800 border-gray-300";
   };
+
+  const formatStatus = (status: string) =>
+    status.replaceAll("_", " ").replace(/\b\w/g, (char) => char.toUpperCase());
 
   if (loading) {
     return (
@@ -263,7 +267,7 @@ export default function ShipmentDetailPage() {
                 <span
                   className={`px-4 py-2 rounded-full text-sm font-semibold border ${getStatusColor(shipment.status)}`}
                 >
-                  {shipment.status.replace("-", " ").toUpperCase()}
+                  {formatStatus(shipment.status)}
                 </span>
               </div>
 
@@ -297,15 +301,15 @@ export default function ShipmentDetailPage() {
               </h2>
               <div className="space-y-2">
                 <p className="font-semibold text-lg">
-                  {shipment.orderId.shippingAddress.fullName}
+                  {shipment.orderId.shippingAddress.name}
                 </p>
                 <p className="text-gray-700">
-                  {shipment.orderId.shippingAddress.addressLine}
+                  {shipment.orderId.shippingAddress.street}
                 </p>
                 <p className="text-gray-700">
                   {shipment.orderId.shippingAddress.city},{" "}
                   {shipment.orderId.shippingAddress.state} -{" "}
-                  {shipment.orderId.shippingAddress.pincode}
+                  {shipment.orderId.shippingAddress.zipCode}
                 </p>
                 <div className="flex gap-4 mt-4">
                   <a
@@ -332,7 +336,7 @@ export default function ShipmentDetailPage() {
                     className="flex justify-between items-center py-2 border-b last:border-b-0"
                   >
                     <div>
-                      <p className="font-medium">{item.name}</p>
+                      <p className="font-medium">{item.productName}</p>
                       <p className="text-sm text-gray-500">
                         Qty: {item.quantity}
                       </p>
@@ -347,7 +351,7 @@ export default function ShipmentDetailPage() {
             <div className="bg-white rounded-lg shadow p-6">
               <h2 className="text-xl font-bold mb-4">Tracking History</h2>
               <div className="space-y-4">
-                {shipment.trackingEvents.map((event, index) => (
+                {shipment.events.map((event, index) => (
                   <div key={index} className="flex gap-4">
                     <div className="flex flex-col items-center">
                       <div
@@ -355,21 +359,21 @@ export default function ShipmentDetailPage() {
                           index === 0 ? "bg-blue-600" : "bg-gray-300"
                         }`}
                       ></div>
-                      {index < shipment.trackingEvents.length - 1 && (
+                      {index < shipment.events.length - 1 && (
                         <div className="w-0.5 h-full bg-gray-300 my-1"></div>
                       )}
                     </div>
                     <div className="flex-1 pb-4">
                       <p className="font-semibold">
-                        {event.status.replace("-", " ").toUpperCase()}
+                        {formatStatus(event.status)}
                       </p>
                       <p className="text-sm text-gray-600">{event.location}</p>
                       <p className="text-xs text-gray-500">
                         {new Date(event.timestamp).toLocaleString()}
                       </p>
-                      {event.note && (
+                      {event.description && (
                         <p className="text-sm text-gray-700 mt-1">
-                          Note: {event.note}
+                          Note: {event.description}
                         </p>
                       )}
                     </div>
@@ -417,7 +421,7 @@ export default function ShipmentDetailPage() {
                     </div>
 
                     {/* Delivery Proof (for delivered status) */}
-                    {shipment.status === "out-for-delivery" && (
+                    {shipment.status === "out_for_delivery" && (
                       <div>
                         <label className="block text-sm font-medium mb-2">
                           Delivery Proof
@@ -495,7 +499,18 @@ export default function ShipmentDetailPage() {
                     <div className="space-y-2">
                       {shipment.status === "pending" && (
                         <button
-                          onClick={() => handleStatusUpdate("in-transit")}
+                          onClick={() => handleStatusUpdate("picked")}
+                          disabled={updating}
+                          className="w-full bg-sky-600 text-white py-3 rounded-lg font-semibold hover:bg-sky-700 disabled:opacity-50 flex items-center justify-center gap-2"
+                        >
+                          <Truck className="w-5 h-5" />
+                          Mark Picked Up
+                        </button>
+                      )}
+
+                      {shipment.status === "picked" && (
+                        <button
+                          onClick={() => handleStatusUpdate("in_transit")}
                           disabled={updating}
                           className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2"
                         >
@@ -504,9 +519,9 @@ export default function ShipmentDetailPage() {
                         </button>
                       )}
 
-                      {shipment.status === "in-transit" && (
+                      {shipment.status === "in_transit" && (
                         <button
-                          onClick={() => handleStatusUpdate("out-for-delivery")}
+                          onClick={() => handleStatusUpdate("out_for_delivery")}
                           disabled={updating}
                           className="w-full bg-purple-600 text-white py-3 rounded-lg font-semibold hover:bg-purple-700 disabled:opacity-50 flex items-center justify-center gap-2"
                         >
@@ -515,7 +530,7 @@ export default function ShipmentDetailPage() {
                         </button>
                       )}
 
-                      {shipment.status === "out-for-delivery" && (
+                      {shipment.status === "out_for_delivery" && (
                         <button
                           onClick={() => handleStatusUpdate("delivered")}
                           disabled={updating || !proofImage}
@@ -552,7 +567,7 @@ export default function ShipmentDetailPage() {
                 </a>
                 <a
                   href={`https://maps.google.com/?q=${encodeURIComponent(
-                    `${shipment.orderId.shippingAddress.addressLine}, ${shipment.orderId.shippingAddress.city}`,
+                    `${shipment.orderId.shippingAddress.street}, ${shipment.orderId.shippingAddress.city}`,
                   )}`}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -561,6 +576,13 @@ export default function ShipmentDetailPage() {
                   <MapPin className="w-5 h-5 text-green-600" />
                   <span>Open in Maps</span>
                 </a>
+                <button
+                  onClick={() => router.push("/delivery/history")}
+                  className="w-full flex items-center gap-3 p-3 border rounded-lg hover:bg-gray-50 text-left"
+                >
+                  <Clock className="w-5 h-5 text-purple-600" />
+                  <span>Open Delivery History</span>
+                </button>
               </div>
             </div>
           </div>

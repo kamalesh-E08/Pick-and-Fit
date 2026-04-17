@@ -62,11 +62,34 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { userId, userEmail, personName, photoUrl, description } = body;
+    const {
+      userId,
+      userEmail,
+      personName,
+      photoUrl,
+      description,
+      gender,
+      ageGroup,
+    } = body;
 
     if (!userEmail || !personName || !photoUrl) {
       return NextResponse.json(
         { error: "Email, person name, and photo are required" },
+        { status: 400 },
+      );
+    }
+
+    const validGenders = ["men", "women", "kids", ""];
+    const validAgeGroups = ["0-2", "3-5", "6-9", "10-14", ""];
+    if (gender && !validGenders.includes(gender)) {
+      return NextResponse.json(
+        { error: "Invalid gender value" },
+        { status: 400 },
+      );
+    }
+    if (ageGroup && !validAgeGroups.includes(ageGroup)) {
+      return NextResponse.json(
+        { error: "Invalid age group value" },
         { status: 400 },
       );
     }
@@ -77,6 +100,8 @@ export async function POST(request: NextRequest) {
       personName,
       photoUrl,
       description: description || "",
+      gender: gender || "",
+      ageGroup: gender === "kids" ? ageGroup || "" : "",
     });
 
     return NextResponse.json({

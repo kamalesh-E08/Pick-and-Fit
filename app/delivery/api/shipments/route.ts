@@ -2,9 +2,31 @@ import { NextRequest, NextResponse } from "next/server";
 import { connect } from "@/lib/db/connection";
 import Shipment from "@/lib/db/models/Shipment";
 import Order from "@/lib/db/models/Order";
+import { verifyAccessToken } from "@/lib/auth/jwt";
+
+const VALID_STATUSES = [
+  "pending",
+  "picked",
+  "in_transit",
+  "out_for_delivery",
+  "delivered",
+  "failed",
+] as const;
 
 export async function GET(req: NextRequest) {
   try {
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const token = authHeader.substring(7);
+    const decoded = verifyAccessToken(token);
+
+    if (!decoded || decoded.role !== "delivery") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
+
     try {
       await connect();
     } catch (connErr) {
@@ -15,17 +37,11 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const deliveryPartnerId = req.headers.get("x-user-id");
-
-    if (!deliveryPartnerId) {
-      return NextResponse.json(
-        { error: "Unauthorized - Delivery partner ID required" },
-        { status: 401 },
-      );
-    }
+    const deliveryPartnerId = decoded.userId;
 
     const { searchParams } = new URL(req.url);
     const status = searchParams.get("status");
+    const search = searchParams.get("search")?.trim();
     const limit = parseInt(searchParams.get("limit") || "20");
     const page = parseInt(searchParams.get("page") || "1");
     const skip = (page - 1) * limit;
@@ -38,6 +54,13 @@ export async function GET(req: NextRequest) {
       };
     } else if (status && status !== "all") {
       query.status = status;
+    }
+
+    if (search) {
+      query.$or = [
+        { orderNumber: new RegExp(search, "i") },
+        { trackingNumber: new RegExp(search, "i") },
+      ];
     }
 
     const shipments = await Shipment.find(query)
@@ -53,7 +76,7 @@ export async function GET(req: NextRequest) {
     // Transform data to include shipping address from order
     const transformedShipments = shipments.map((shipment: any) => ({
       _id: shipment._id,
-      orderNumber: shipment.orderNumber,
+      orderNumber: shipment.orderId?.orderNumber || shipment.orderNumber,
       trackingNumber: shipment.trackingNumber,
       status: shipment.status,
       estimatedDelivery: shipment.estimatedDelivery,
@@ -90,6 +113,18 @@ export async function GET(req: NextRequest) {
 // Update shipment status
 export async function PUT(req: NextRequest) {
   try {
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const token = authHeader.substring(7);
+    const decoded = verifyAccessToken(token);
+
+    if (!decoded || decoded.role !== "delivery") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
+
     try {
       await connect();
     } catch (connErr) {
@@ -100,14 +135,11 @@ export async function PUT(req: NextRequest) {
       );
     }
 
-    const deliveryPartnerId = req.headers.get("x-user-id");
-
-    if (!deliveryPartnerId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const deliveryPartnerId = decoded.userId;
 
     const body = await req.json();
-    const { shipmentId, status, currentLocation, deliveryProof, notes } = body;
+    const { shipmentId, status, currentLocation, deliveryProof, notes, note } =
+      body;
 
     if (!shipmentId || !status) {
       return NextResponse.json(
@@ -116,16 +148,36 @@ export async function PUT(req: NextRequest) {
       );
     }
 
+    if (!VALID_STATUSES.includes(status)) {
+      return NextResponse.json(
+        { error: "Invalid shipment status" },
+        { status: 400 },
+      );
+    }
+
+    const resolvedNote = notes || note;
+
     const updateData: any = {
       status,
       updatedAt: new Date(),
     };
 
     if (currentLocation) updateData.currentLocation = currentLocation;
-    if (notes) updateData.notes = notes;
+    if (resolvedNote) updateData.notes = resolvedNote;
     if (status === "delivered") {
       updateData.actualDelivery = new Date();
-      if (deliveryProof) updateData.deliveryProof = deliveryProof;
+      if (deliveryProof) {
+        updateData.deliveryProof =
+          typeof deliveryProof === "string"
+            ? {
+                imageUrl: deliveryProof,
+                timestamp: new Date(),
+              }
+            : {
+                ...deliveryProof,
+                timestamp: deliveryProof.timestamp || new Date(),
+              };
+      }
     }
 
     // Add event to tracking
@@ -133,7 +185,7 @@ export async function PUT(req: NextRequest) {
       status,
       timestamp: new Date(),
       location: currentLocation || "",
-      description: notes || `Status updated to ${status}`,
+      description: resolvedNote || `Status updated to ${status}`,
     };
 
     const shipment = await Shipment.findOneAndUpdate(
@@ -161,7 +213,7 @@ export async function PUT(req: NextRequest) {
           deliveredAt: new Date(),
         },
       );
-    } else if (status === "out_for_delivery") {
+    } else if (["picked", "in_transit", "out_for_delivery"].includes(status)) {
       await Order.findOneAndUpdate(
         { orderNumber: shipment.orderNumber },
         { orderStatus: "shipped" },

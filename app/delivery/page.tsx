@@ -11,7 +11,7 @@ import {
   AlertCircle,
   TrendingUp,
   DollarSign,
-  Navigation,
+  Truck,
 } from "lucide-react";
 
 interface DeliveryStats {
@@ -130,16 +130,9 @@ export default function DeliveryDashboard() {
                 Delivery Partner Dashboard
               </h1>
               <p className="text-gray-500 mt-1">
-                Manage your deliveries and track earnings
+                Manage assigned deliveries and keep shipment updates accurate
               </p>
             </div>
-            <Link
-              href="/delivery/route-optimizer"
-              className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
-            >
-              <Navigation className="w-5 h-5" />
-              Optimize Route
-            </Link>
           </div>
         </div>
       </header>
@@ -182,16 +175,30 @@ export default function DeliveryDashboard() {
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Link href="/delivery/shipments">
+          <Link href="/delivery/shipments?status=active">
             <div className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition-shadow cursor-pointer">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-lg font-semibold text-gray-900">
-                  All Shipments
+                  Assigned Shipments
                 </h3>
                 <Package className="w-8 h-8 text-blue-600" />
               </div>
               <p className="text-gray-600 text-sm">
-                View and manage all your assigned deliveries
+                Review all active and completed shipments assigned to you
+              </p>
+            </div>
+          </Link>
+
+          <Link href="/delivery/shipments?status=pending">
+            <div className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition-shadow cursor-pointer">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Pickup Queue
+                </h3>
+                <Truck className="w-8 h-8 text-amber-600" />
+              </div>
+              <p className="text-gray-600 text-sm">
+                Focus on shipments waiting to be picked up first
               </p>
             </div>
           </Link>
@@ -205,21 +212,7 @@ export default function DeliveryDashboard() {
                 <CheckCircle className="w-8 h-8 text-green-600" />
               </div>
               <p className="text-gray-600 text-sm">
-                View past deliveries and performance
-              </p>
-            </div>
-          </Link>
-
-          <Link href="/delivery/earnings">
-            <div className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition-shadow cursor-pointer">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-lg font-semibold text-gray-900">
-                  Earnings
-                </h3>
-                <DollarSign className="w-8 h-8 text-purple-600" />
-              </div>
-              <p className="text-gray-600 text-sm">
-                Track your earnings and payment history
+                Review completed and failed deliveries with payouts
               </p>
             </div>
           </Link>
@@ -298,12 +291,20 @@ export default function DeliveryDashboard() {
                       </div>
                     </div>
 
-                    <Link
-                      href={`/delivery/shipments/${shipment._id}`}
-                      className="ml-4 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
-                    >
-                      View Details
-                    </Link>
+                    <div className="ml-4 flex items-center gap-3">
+                      <a
+                        href={`tel:${shipment.shippingAddress.phone}`}
+                        className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                      >
+                        Call
+                      </a>
+                      <Link
+                        href={`/delivery/shipments/${shipment._id}`}
+                        className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+                      >
+                        View Details
+                      </Link>
+                    </div>
                   </div>
                 </div>
               ))}

@@ -1,10 +1,10 @@
 import mongoose from "mongoose";
 
-const MONGODB_URI = process.env.MONGODB_URI || "";
-const MONGODB_DB_NAME = process.env.MONGODB_DB_NAME || "pickfit";
-
-if (!MONGODB_URI && process.env.NODE_ENV === "production") {
-  console.warn("MONGODB_URI is not defined in production environment");
+function getMongoConfig() {
+  return {
+    uri: process.env.MONGODB_URI || "",
+    dbName: process.env.MONGODB_DB_NAME || "pickfit",
+  };
 }
 
 interface CachedConnection {
@@ -31,7 +31,9 @@ if (!global.mongooseCache) {
  * Implements connection caching to prevent multiple connections in development
  */
 export async function connectDB(): Promise<typeof mongoose | null> {
-  if (!MONGODB_URI) {
+  const { uri: mongodbUri, dbName } = getMongoConfig();
+
+  if (!mongodbUri) {
     console.warn("MongoDB URI not provided, running without database");
     return null;
   }
@@ -43,10 +45,10 @@ export async function connectDB(): Promise<typeof mongoose | null> {
   if (!cached.promise) {
     const opts = {
       bufferCommands: false,
-      dbName: MONGODB_DB_NAME,
+      dbName,
     };
 
-    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
+    cached.promise = mongoose.connect(mongodbUri, opts).then((mongoose) => {
       console.log("✅ MongoDB connected successfully");
       return mongoose;
     });

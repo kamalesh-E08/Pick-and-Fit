@@ -13,6 +13,8 @@ export interface CartItem {
   selectedSize?: string | null;
   selectedColor?: string | null;
   originalPrice?: number;
+  tryOnFee?: number;
+  tryOnSessionId?: string;
 }
 
 interface CartContextType {
@@ -203,7 +205,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   };
 
   const cartCount = items.reduce((s, i) => s + i.quantity, 0);
-  const subtotal = items.reduce((s, i) => s + i.price * i.quantity, 0);
+  const subtotal = items.reduce(
+    (s, i) => s + i.price * i.quantity + (i.tryOnFee ?? 0),
+    0,
+  );
 
   return (
     <CartContext.Provider

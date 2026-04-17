@@ -282,7 +282,8 @@ export async function sendPasswordResetEmail(
   resetToken: string,
 ): Promise<void> {
   try {
-    const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password?token=${resetToken}`;
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const resetUrl = `${appUrl}/reset-password?token=${resetToken}`;
 
     const variables = {
       resetUrl: resetUrl,
@@ -365,6 +366,14 @@ function generateEmailText(
       text += `Your order has been delivered!\n`;
       text += `Order Number: ${variables.orderNumber}\n`;
       text += `Delivery Date: ${variables.deliveryDate}\n\n`;
+      break;
+
+    case EmailType.RESET_PASSWORD:
+      text += `Hello,\n\n`;
+      text += `We received a request to reset your Pick and Fit password.\n`;
+      text += `Reset your password using this link:\n${variables.resetUrl}\n\n`;
+      text += `This link will expire in ${variables.expiryTime}.\n`;
+      text += `If you did not request this, you can safely ignore this email.\n\n`;
       break;
 
     default:
@@ -452,6 +461,16 @@ function renderEmailContent(
         <p><strong>Order Number:</strong> ${variables.orderNumber}</p>
         <p><strong>Reason:</strong> ${variables.cancellationReason}</p>
         <p>${variables.refundInfo}</p>
+      `;
+
+    case EmailType.RESET_PASSWORD:
+      return `
+        <h2>Reset Your Password</h2>
+        <p>We received a request to reset your Pick and Fit account password.</p>
+        <p>Click the button below to create a new password:</p>
+        <a href="${variables.resetUrl}" class="btn">Reset Password</a>
+        <p>This link will expire in <strong>${variables.expiryTime}</strong>.</p>
+        <p>If you did not request this, you can safely ignore this email.</p>
       `;
 
     default:

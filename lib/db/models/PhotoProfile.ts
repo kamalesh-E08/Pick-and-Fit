@@ -23,6 +23,16 @@ const PhotoProfileSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    gender: {
+      type: String,
+      enum: ["men", "women", "kids", ""],
+      default: "",
+    },
+    ageGroup: {
+      type: String,
+      enum: ["0-2", "3-5", "6-9", "10-14", ""],
+      default: "",
+    },
   },
   {
     timestamps: true,

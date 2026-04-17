@@ -1,9 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connect } from "@/lib/db/connection";
 import Shipment from "@/lib/db/models/Shipment";
+import { verifyAccessToken } from "@/lib/auth/jwt";
 
 export async function GET(req: NextRequest) {
   try {
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const token = authHeader.substring(7);
+    const decoded = verifyAccessToken(token);
+
+    if (!decoded || decoded.role !== "delivery") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
+
     try {
       await connect();
     } catch (connErr) {
@@ -14,16 +27,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // TODO: Get delivery partner ID from JWT token
-    // For now, we'll use a placeholder
-    const deliveryPartnerId = req.headers.get("x-user-id"); // Should come from JWT
-
-    if (!deliveryPartnerId) {
-      return NextResponse.json(
-        { error: "Unauthorized - Delivery partner ID required" },
-        { status: 401 },
-      );
-    }
+    const deliveryPartnerId = decoded.userId;
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
