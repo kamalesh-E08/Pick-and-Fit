@@ -20,6 +20,7 @@ export interface AIServiceConfig {
   useOllama?: boolean;
   ollamaUrl?: string;
   huggingFaceToken?: string;
+  huggingFaceModel?: string;
   model?: string;
 }
 
@@ -29,15 +30,14 @@ class AIAssistantService {
   private ollamaUrl: string = "http://localhost:11434";
   private huggingFaceToken: string = "";
   private model: string = "mistral"; // Ollama model
-  private huggingFaceModel: string = "mistralai/Mistral-7B-Instruct-v0.1";
+  private huggingFaceModel: string = "gpt2";
 
   constructor(config?: AIServiceConfig) {
     this.useOllama = config?.useOllama ?? false;
     this.ollamaUrl = config?.ollamaUrl ?? "http://localhost:11434";
     this.huggingFaceToken = config?.huggingFaceToken ?? "";
     this.model = config?.model ?? "mistral";
-    this.huggingFaceModel =
-      config?.huggingFaceModel ?? "mistralai/Mistral-7B-Instruct-v0.1";
+    this.huggingFaceModel = config?.huggingFaceModel ?? "gpt2";
   }
 
   /**

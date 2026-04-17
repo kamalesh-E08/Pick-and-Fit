@@ -12,7 +12,10 @@ import mongoose from "mongoose";
 interface ChatRequest {
   message: string;
   userEmail?: string;
-  conversationHistory?: Array<{ role: string; content: string }>;
+  conversationHistory?: Array<{
+    role: "user" | "assistant";
+    content: string;
+  }>;
   userContext?: {
     email?: string;
     cartItems?: number;
@@ -98,8 +101,7 @@ export async function POST(request: NextRequest) {
     const aiService = new AIAssistantService({
       useOllama: process.env.NEXT_PUBLIC_USE_OLLAMA === "true",
       huggingFaceToken: process.env.HUGGING_FACE_TOKEN,
-      huggingFaceModel:
-        process.env.HUGGING_FACE_MODEL || "mistralai/Mistral-7B-Instruct-v0.1",
+      huggingFaceModel: process.env.HUGGING_FACE_MODEL || "gpt2",
       model: process.env.NEXT_PUBLIC_OLLAMA_MODEL || "mistral",
     });
 
