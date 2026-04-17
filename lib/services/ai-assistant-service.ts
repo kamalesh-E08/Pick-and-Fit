@@ -29,13 +29,15 @@ class AIAssistantService {
   private ollamaUrl: string = "http://localhost:11434";
   private huggingFaceToken: string = "";
   private model: string = "mistral"; // Ollama model
-  private huggingFaceModel: string = "meta-llama/Llama-2-7b-chat-hf";
+  private huggingFaceModel: string = "mistralai/Mistral-7B-Instruct-v0.1";
 
   constructor(config?: AIServiceConfig) {
     this.useOllama = config?.useOllama ?? false;
     this.ollamaUrl = config?.ollamaUrl ?? "http://localhost:11434";
     this.huggingFaceToken = config?.huggingFaceToken ?? "";
     this.model = config?.model ?? "mistral";
+    this.huggingFaceModel =
+      config?.huggingFaceModel ?? "mistralai/Mistral-7B-Instruct-v0.1";
   }
 
   /**
@@ -146,7 +148,7 @@ When the user asks about specific products, try to identify them from your knowl
       const fullPrompt = `${systemPrompt}\n\nConversation History:\n${conversationContext}\n\nUser: ${userMessage}\n\nAssistant:`;
 
       const response = await fetch(
-        "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.1",
+        `https://api-inference.huggingface.co/models/${this.huggingFaceModel}`,
         {
           headers: {
             Authorization: `Bearer ${this.huggingFaceToken}`,
@@ -178,8 +180,13 @@ When the user asks about specific products, try to identify them from your knowl
             ? JSON.stringify(responseJson)
             : responseText || response.statusText;
 
+        const modelHint =
+          response.status === 404
+            ? ` Please check HUGGING_FACE_MODEL and model access permissions.`
+            : "";
+
         throw new Error(
-          `Hugging Face API error: ${response.status} ${response.statusText} - ${errorDetails}`,
+          `Hugging Face API error: ${response.status} ${response.statusText} - ${errorDetails}${modelHint}`,
         );
       }
 

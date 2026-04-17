@@ -98,6 +98,8 @@ export async function POST(request: NextRequest) {
     const aiService = new AIAssistantService({
       useOllama: process.env.NEXT_PUBLIC_USE_OLLAMA === "true",
       huggingFaceToken: process.env.HUGGING_FACE_TOKEN,
+      huggingFaceModel:
+        process.env.HUGGING_FACE_MODEL || "mistralai/Mistral-7B-Instruct-v0.1",
       model: process.env.NEXT_PUBLIC_OLLAMA_MODEL || "mistral",
     });
 
@@ -111,9 +113,9 @@ export async function POST(request: NextRequest) {
     // Log conversation if email provided
     if (userEmail) {
       try {
-       await connect();
-       const db = mongoose.connection.db;
-       const conversationCollection = db.collection("ai_conversations");
+        await connect();
+        const db = mongoose.connection.db;
+        const conversationCollection = db.collection("ai_conversations");
         await conversationCollection.insertOne({
           userEmail,
           message,
@@ -139,7 +141,6 @@ export async function POST(request: NextRequest) {
     const errorMessage =
       error instanceof Error ? error.message : "Failed to process request";
 
-    // Check for specific error types
     if (
       errorMessage.includes("Ollama") &&
       errorMessage.includes("Hugging Face")
@@ -161,7 +162,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: errorMessage || "Internal server error" },
       { status: 500 },
     );
   }
