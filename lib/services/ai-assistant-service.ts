@@ -28,9 +28,9 @@ class AIAssistantService {
   private conversationHistory: ConversationMessage[] = [];
   private useOllama: boolean = false;
   private ollamaUrl: string = "http://localhost:11434";
-  private huggingFaceToken: string = "";
+  private huggingFaceToken: string = "process.env.HUGGING_FACE_TOKEN || ''";
   private model: string = "mistral"; // Ollama model
-  private huggingFaceModel: string = "gpt2";
+  private huggingFaceModel: string = "MiniMaxAI/MiniMax-M2.7";
 
   constructor(config?: AIServiceConfig) {
     this.useOllama = config?.useOllama ?? false;
